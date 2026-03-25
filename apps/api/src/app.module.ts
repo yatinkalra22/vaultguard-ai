@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { CommonModule } from './common/common.module';
 import { AuthModule } from './auth/auth.module';
 import { AuthController } from './auth/auth.controller';
+import { SlackModule } from './slack/slack.module';
 import { HealthController } from './health.controller';
 
 @Module({
@@ -14,6 +15,7 @@ import { HealthController } from './health.controller';
 
     CommonModule,
     AuthModule,
+    SlackModule,
   ],
   controllers: [HealthController, AuthController],
 })
