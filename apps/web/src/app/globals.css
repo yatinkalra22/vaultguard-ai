@@ -1,0 +1,50 @@
+@import "tailwindcss";
+
+/* WHY: Dark-first design — security tools (Wiz, Datadog, Vercel) use dark themes.
+   No light mode offered. Color = urgency only (red/orange/yellow/green for severity).
+   See: docs/PLAN.md Phase 4 design notes */
+
+:root {
+  /* Security-focused dark palette */
+  --background: #0B0F1A;
+  --foreground: #F9FAFB;
+  --card: #111827;
+  --card-foreground: #F9FAFB;
+  --border: #1F2937;
+  --primary: #06B6D4;
+  --primary-foreground: #0B0F1A;
+  --muted: #1F2937;
+  --muted-foreground: #9CA3AF;
+  --accent: #1F2937;
+  --accent-foreground: #F9FAFB;
+  --destructive: #EF4444;
+
+  /* Semantic risk colors */
+  --risk-critical: #EF4444;
+  --risk-high: #F97316;
+  --risk-medium: #EAB308;
+  --risk-low: #22C55E;
+  --risk-info: #3B82F6;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-border: var(--border);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
