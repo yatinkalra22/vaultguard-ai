@@ -1,14 +1,14 @@
 import { Module } from '@nestjs/common';
 import { PassportModule } from '@nestjs/passport';
 import { Auth0Strategy } from './auth0.strategy';
+import { FgaService } from './fga.service';
+import { FgaGuard } from './fga.guard';
 
 @Module({
   imports: [
-    // WHY: defaultStrategy 'jwt' means @UseGuards(AuthGuard()) will use
-    // our Auth0Strategy without specifying the strategy name each time.
     PassportModule.register({ defaultStrategy: 'jwt' }),
   ],
-  providers: [Auth0Strategy],
-  exports: [PassportModule],
+  providers: [Auth0Strategy, FgaService, FgaGuard],
+  exports: [PassportModule, FgaService, FgaGuard],
 })
 export class AuthModule {}
