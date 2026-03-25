@@ -1,0 +1,103 @@
+# VaultGuard AI — Architecture
+
+## Overview
+
+VaultGuard AI is an AI-powered SaaS access governance agent. A security admin connects their Slack workspace and GitHub organization. VaultGuard's AI agent continuously scans both platforms, detects access anomalies (stale users, over-permissioned bots, shadow apps), and asks the admin for approval via CIBA before taking any remediation action.
+
+## System Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                        BROWSER (Admin)                              │
+│              Next.js 14 App Router  (Vercel)                        │
+│   Dashboard │ Findings │ Integrations │ Audit Log │ Settings        │
+└────────────────────────────┬────────────────────────────────────────┘
+                             │ HTTPS / REST + SSE
+┌────────────────────────────▼────────────────────────────────────────┐
+│                    BACKEND  (Railway or Render)                     │
+│                    NestJS — TypeScript                              │
+│                                                                     │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐              │
+│  │  AuthModule  │  │  ScanModule  │  │   AIModule   │              │
+│  │  (Auth0 JWT) │  │  (Scheduler) │  │  (Claude)    │              │
+│  └──────────────┘  └──────────────┘  └──────────────┘              │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐              │
+│  │ SlackModule  │  │ GitHubModule │  │ AlertsModule │              │
+│  │ (Token Vault)│  │ (Token Vault)│  │   (CIBA)     │              │
+│  └──────────────┘  └──────────────┘  └──────────────┘              │
+│  ┌──────────────┐  ┌──────────────┐                                 │
+│  │   FGAModule  │  │  AuditModule │                                 │
+│  │  (Auth0 FGA) │  │  (Postgres)  │                                 │
+│  └──────────────┘  └──────────────┘                                 │
+└─────────────────────────────┬───────────────────────────────────────┘
+                              │
+        ┌─────────────────────┼──────────────────────┐
+        │                     │                      │
+┌───────▼───────┐   ┌─────────▼──────┐   ┌──────────▼────────┐
+│  Auth0 Tenant │   │   Supabase     │   │   Slack + GitHub  │
+│               │   │   (Postgres)   │   │   APIs            │
+│  Token Vault  │   │                │   │                   │
+│  CIBA         │   │  scans         │   │  Users, Apps,     │
+│  FGA          │   │  findings      │   │  Permissions      │
+│  Universal    │   │  audit_logs    │   │                   │
+│  Login        │   │  remediations  │   │                   │
+└───────────────┘   └────────────────┘   └───────────────────┘
+```
+
+## Auth0 Feature Usage
+
+| Feature | Where Used | Why |
+|---------|-----------|-----|
+| **Universal Login** | Admin signs into VaultGuard | Standard SSO login |
+| **Token Vault** | Stores Slack + GitHub OAuth tokens | Agents use token exchange to call APIs without exposing credentials |
+| **CIBA** | Before any remediation action | Sends push/email to admin for approval before revoking access |
+| **FGA** | Policy enforcement | Only Security Admins can approve GitHub org-level changes; Team Leads for Slack |
+| **Connected Accounts** | "Connect Slack / Connect GitHub" flow | User consents once; Token Vault handles refresh forever |
+
+## Token Vault Flow
+
+1. Admin logs in via Auth0 Universal Login
+2. Admin clicks "Connect Slack" → Auth0 Connected Accounts OAuth flow
+3. Slack refresh token stored in Auth0 Token Vault (never touches our DB)
+4. Scan job runs → calls token exchange → gets fresh access token
+5. Scan calls Slack Admin API with that token
+6. Anomaly found → CIBA request sent to admin
+7. Admin approves on phone → NestJS receives callback → executes remediation
+8. Action logged to audit table in Supabase
+
+## Database Schema
+
+See `scripts/setup-database.sql` for the full schema. Key tables:
+- `organizations` — Companies using VaultGuard
+- `integrations` — Connected providers per org (Slack, GitHub)
+- `scans` — Individual scan runs
+- `findings` — Security findings from scans
+- `remediations` — CIBA-based remediation requests
+- `audit_logs` — Full audit trail
+
+## Monorepo Structure
+
+```
+vaultguard-ai/
+├── apps/
+│   ├── web/          # Next.js 14 frontend
+│   └── api/          # NestJS backend
+├── packages/
+│   └── shared/       # Shared TypeScript types
+├── docs/             # Architecture, setup, guides
+├── scripts/          # Deployment and setup scripts
+├── turbo.json
+├── package.json
+└── .env.example
+```
+
+## API Endpoints
+
+See the backend source code for full endpoint documentation. Key groups:
+- `/api/auth/*` — Authentication
+- `/api/integrations/*` — Connect/disconnect providers
+- `/api/scans/*` — Scan history and triggers
+- `/api/findings/*` — Security findings CRUD
+- `/api/remediations/*` — CIBA remediation flow
+- `/api/audit-logs` — Audit trail
+- `/api/dashboard/*` — Summary + SSE events

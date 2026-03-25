@@ -22,4 +22,4 @@ dist/
 Thumbs.db
 
 # Internal plan (not for commits)
-PLAN.md
+docs/PLAN.md

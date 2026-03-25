@@ -1,0 +1,14 @@
+{
+  "name": "vaultguard-ai",
+  "private": true,
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint"
+  },
+  "devDependencies": {
+    "turbo": "^2.8.20",
+    "typescript": "^6.0.2"
+  },
+  "packageManager": "pnpm@8.15.0"
+}
