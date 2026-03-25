@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { CommonModule } from './common/common.module';
 import { HealthController } from './health.controller';
 
 @Module({
@@ -8,6 +9,8 @@ import { HealthController } from './health.controller';
     // re-importing ConfigModule. Reduces boilerplate across all feature modules.
     // See: https://docs.nestjs.com/techniques/configuration#use-module-globally
     ConfigModule.forRoot({ isGlobal: true }),
+
+    CommonModule,
   ],
   controllers: [HealthController],
 })
