@@ -11,6 +11,8 @@ import { AiModule } from './ai/ai.module';
 import { ScanningModule } from './scanning/scanning.module';
 import { FindingsModule } from './findings/findings.module';
 import { RemediationModule } from './remediation/remediation.module';
+import { AuditModule } from './audit/audit.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 import { HealthController } from './health.controller';
 
 @Module({
@@ -20,6 +22,7 @@ import { HealthController } from './health.controller';
     EventEmitterModule.forRoot(),
 
     CommonModule,
+    AuditModule,
     AuthModule,
     SlackModule,
     GithubModule,
@@ -27,6 +30,7 @@ import { HealthController } from './health.controller';
     ScanningModule,
     FindingsModule,
     RemediationModule,
+    DashboardModule,
   ],
   controllers: [HealthController, AuthController],
 })
