@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { CommonModule } from './common/common.module';
+import { AuthModule } from './auth/auth.module';
+import { AuthController } from './auth/auth.controller';
 import { HealthController } from './health.controller';
 
 @Module({
@@ -11,7 +13,8 @@ import { HealthController } from './health.controller';
     ConfigModule.forRoot({ isGlobal: true }),
 
     CommonModule,
+    AuthModule,
   ],
-  controllers: [HealthController],
+  controllers: [HealthController, AuthController],
 })
 export class AppModule {}
