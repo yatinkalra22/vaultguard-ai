@@ -9,6 +9,7 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.80.0",
     "@auth0/ai": "^6.0.0",
     "@nestjs/common": "^11.1.17",
     "@nestjs/config": "^4.0.3",

@@ -5,6 +5,7 @@ import { AuthModule } from './auth/auth.module';
 import { AuthController } from './auth/auth.controller';
 import { SlackModule } from './slack/slack.module';
 import { GithubModule } from './github/github.module';
+import { AiModule } from './ai/ai.module';
 import { HealthController } from './health.controller';
 
 @Module({
@@ -18,6 +19,7 @@ import { HealthController } from './health.controller';
     AuthModule,
     SlackModule,
     GithubModule,
+    AiModule,
   ],
   controllers: [HealthController, AuthController],
 })
