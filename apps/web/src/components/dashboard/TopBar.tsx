@@ -1,6 +1,7 @@
 "use client";
-import { Shield, LogOut } from "lucide-react";
 
+import { Shield, LogOut } from "lucide-react";
+import { MobileSidebar } from "./MobileSidebar";
 
 interface TopBarProps {
   userName?: string;
@@ -9,16 +10,19 @@ interface TopBarProps {
 
 export function TopBar({ userName, userEmail }: TopBarProps) {
   return (
-    <header className="h-14 border-b border-border bg-card flex items-center justify-between px-6">
+    <header className="h-14 border-b border-border bg-card flex items-center justify-between px-4 md:px-6">
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Shield className="h-4 w-4 text-primary" />
-        <span>Dashboard</span>
+        {/* WHY: Mobile sidebar hamburger rendered inline in the top bar.
+            Visible only on screens < md breakpoint. */}
+        <MobileSidebar />
+        <Shield className="h-4 w-4 text-primary hidden md:block" />
+        <span className="hidden md:inline">Dashboard</span>
       </div>
 
       <div className="flex items-center gap-4">
         <div className="text-right">
           <p className="text-sm font-medium">{userName ?? "Admin"}</p>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-muted-foreground hidden sm:block">
             {userEmail ?? "admin@company.com"}
           </p>
         </div>
