@@ -18,18 +18,22 @@
 git clone https://github.com/YOUR_USERNAME/vaultguard-ai.git
 cd vaultguard-ai
 
-# 2. Install dependencies
-pnpm install
+# 2. Run the setup script (checks prereqs, installs deps, builds)
+./scripts/setup-local.sh
 
 # 3. Set up environment variables
-# Copy .env.example and fill in your values:
 cp .env.example apps/web/.env.local
 cp .env.example apps/api/.env
+# Edit both files with your Auth0, Supabase, and Anthropic values
 
 # 4. Set up the database
 # Run scripts/setup-database.sql in your Supabase SQL editor
+# Optionally run scripts/seed-database.sql for test data
 
-# 5. Start development
+# 5. Deploy FGA authorization model
+./scripts/setup-fga-model.sh
+
+# 6. Start development
 pnpm dev
 # Web: http://localhost:3000
 # API: http://localhost:4000
@@ -87,16 +91,36 @@ pnpm dev
 1. GitHub → Settings → Developer Settings → OAuth Apps → New
 2. Callback URL: `https://YOUR_AUTH0_DOMAIN/login/callback`
 
+## Available Scripts
+
+| Script | Purpose |
+|--------|---------|
+| `scripts/setup-local.sh` | Full local setup (prereqs, deps, build check) |
+| `scripts/setup-database.sql` | Idempotent database schema (run in Supabase SQL Editor) |
+| `scripts/seed-database.sql` | Test data for local development |
+| `scripts/setup-fga-model.sh` | Deploy Auth0 FGA authorization model |
+| `scripts/deploy-web.sh` | Deploy frontend to Vercel (`--prod` for production) |
+| `scripts/deploy-api.sh` | Deploy backend to Railway |
+
 ## Deployment
 
 All deployments are handled via scripts:
 
 ```bash
-# Deploy frontend to Vercel
+# Deploy frontend to Vercel (preview)
 ./scripts/deploy-web.sh
+
+# Deploy frontend to Vercel (production)
+./scripts/deploy-web.sh --prod
 
 # Deploy backend to Railway
 ./scripts/deploy-api.sh
 ```
 
-See individual scripts for details and required environment variables.
+### Post-Deployment Checklist
+
+1. Update Auth0 callback URLs with production domains
+2. Set `AUTH0_BASE_URL` in Vercel to the production URL
+3. Set `NEXT_PUBLIC_API_URL` in Vercel to the Railway backend URL
+4. Set `FRONTEND_URL` in Railway to the Vercel production URL
+5. Add Redis add-on in Railway: `railway add redis`
