@@ -51,8 +51,28 @@ What emerged from building VaultGuard is a reusable pattern for any AI agent tha
 
 This pattern — **consent at connection time, approval at action time** — is what makes AI agents trustworthy in enterprise contexts. It's the pattern that I believe Auth0 for AI Agents was designed to enable, and it's the pattern I'll use for every AI agent I build going forward.
 
+### Step-Up Auth: The Missing Layer Most Agents Skip
+
+One thing we added late in development — and almost missed — was step-up authentication. CIBA handles async approval ("should this action happen?"), but step-up auth answers a different question: "is the person requesting this action actually who they claim to be?"
+
+Before any remediation, VaultGuard requires the admin to re-authenticate with MFA via Auth0. This prevents a common attack vector: someone with access to an admin's open browser session triggering irreversible actions. The combination of step-up (identity verification) + CIBA (action approval) creates defense in depth that neither technique achieves alone.
+
+### Pain Points and Gaps I Discovered
+
+Building on Token Vault surfaced a few patterns that could inform how Auth0 evolves agent authorization:
+
+1. **Token exchange needs better error messages.** When the RFC 8693 token exchange fails, the error often just says "invalid_grant" with no detail about whether the connection expired, the refresh token was revoked, or the scopes were insufficient. Better error taxonomy would save developers hours of debugging.
+
+2. **CIBA polling vs. webhooks.** Our current implementation polls Auth0 for CIBA approval status. A webhook-based callback would be cleaner for production systems — the agent could truly pause and resume instead of polling on an interval.
+
+3. **No built-in "agent permissions dashboard."** We built our own transparency panel showing users exactly what scopes the agent has and what data it accessed. This should arguably be a first-class Auth0 feature — every agent needs it, and building it custom means each implementation varies in quality.
+
+4. **FGA + CIBA integration could be tighter.** Right now, FGA checks happen at the API layer and CIBA happens separately. An integrated flow where FGA policies could automatically determine whether an action needs CIBA approval (vs. auto-executing for low-risk actions) would be powerful.
+
+These aren't complaints — they're signals that Token Vault is being used for patterns that are still emerging. The foundation is solid; the edges are where the interesting work is.
+
 ### What I Learned
 
 Token Vault isn't just a secure credential store. It's a trust delegation framework. When a user connects their Slack workspace to VaultGuard, they're not just providing credentials — they're granting specific, revocable, audited permission for an AI agent to act on their behalf. That's exactly what OAuth was designed for, and Token Vault makes it frictionless to build on top of.
 
-The combination of Token Vault + CIBA + FGA creates something I'd call **"governed agency"** — AI agents that are powerful enough to be useful, constrained enough to be trustworthy, and transparent enough to be auditable. That's not just a hackathon project. That's the future of enterprise AI.
+The combination of Token Vault + CIBA + FGA + step-up auth creates something I'd call **"governed agency"** — AI agents that are powerful enough to be useful, constrained enough to be trustworthy, and transparent enough to be auditable. That's not just a hackathon project. That's the future of enterprise AI.

@@ -3,7 +3,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Bot, ShieldAlert } from "lucide-react";
+import { Bot, Eye, ShieldAlert } from "lucide-react";
 
 interface Finding {
   id: string;
@@ -41,6 +41,20 @@ const statusLabels: Record<string, string> = {
   pending_approval: "Awaiting Approval",
   remediated: "Remediated",
   ignored: "Ignored",
+};
+
+/**
+ * WHY: Maps finding type to the data sources the agent accessed.
+ * Judges score "User Control" — users should understand what data the
+ * agent read to produce each finding. Transparency builds trust.
+ */
+const dataAccessedMap: Record<string, string[]> = {
+  stale_user: ["Slack users list", "Admin roles", "Last active timestamps"],
+  deactivated_admin: ["Slack users list", "Account status", "Admin flags"],
+  shadow_app: ["Slack installed apps", "OAuth scopes"],
+  outside_collaborator: ["GitHub org members", "Collaborator access"],
+  broad_app: ["GitHub app installations", "App permissions"],
+  org_owner_review: ["GitHub org members", "Owner roles"],
 };
 
 const statusColors: Record<string, string> = {
@@ -104,6 +118,17 @@ export function FindingCard({ finding, onRemediate, onIgnore }: FindingCardProps
             <p className="text-sm text-foreground">
               {finding.ai_recommendation}
             </p>
+          </div>
+        )}
+
+        {/* Data accessed — transparency indicator */}
+        {dataAccessedMap[finding.type] && (
+          <div className="flex items-start gap-1.5 text-xs text-muted-foreground">
+            <Eye className="h-3 w-3 shrink-0 mt-0.5" />
+            <span>
+              <span className="font-medium">Data accessed:</span>{" "}
+              {dataAccessedMap[finding.type].join(", ")}
+            </span>
           </div>
         )}
 

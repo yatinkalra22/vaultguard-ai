@@ -16,6 +16,7 @@ VaultGuard connects to your Slack workspace and GitHub organization, continuousl
 | **Connected Accounts** | One-time OAuth consent flow per provider. Admin connects once, Token Vault handles refresh forever. |
 | **CIBA** | Human-in-the-loop approval before every remediation. Admin receives email, clicks Approve/Reject. No autonomous actions without consent. |
 | **FGA** | Fine-grained authorization via OpenFGA. Only org admins can approve critical remediations. Policy enforced at API layer, not in application code. |
+| **Step-Up Auth** | MFA required before any remediation action. Prevents session hijacking from triggering irreversible changes. |
 | **Universal Login** | Admin authentication with SSO support. JWT RS256 validation via JWKS. |
 
 ## How It Works
@@ -27,7 +28,7 @@ Connect → Scan → Analyze → CIBA Approve → Execute → Audit
 1. **Connect** — Admin connects Slack + GitHub via Auth0 Connected Accounts
 2. **Scan** — AI agent fetches workspace data using Token Vault (credentials never stored locally)
 3. **Analyze** — Claude Sonnet calculates a 0-100 risk score and generates per-finding recommendations in plain English
-4. **Remediate** — Admin clicks "Remediate" → CIBA sends approval email → admin approves → action executes
+4. **Remediate** — Admin clicks "Remediate" → step-up MFA verification → CIBA sends approval email → admin approves → action executes
 5. **Audit** — Every action logged: who requested, who approved, what was done, when
 
 ## Stack
@@ -48,6 +49,7 @@ Connect → Scan → Analyze → CIBA Approve → Execute → Audit
 - **GitHub scanning** — Outside collaborators, org-wide app installations, inactive org owners
 - **AI risk scoring** — 0-100 score with weighted severity calculation
 - **Plain English recommendations** — Claude Sonnet generates specific, actionable advice per finding
+- **Step-up authentication** — MFA required before any remediation (prevents session hijacking)
 - **CIBA remediation** — One-click remediate → email approval → auto-execute
 - **Real-time dashboard** — SSE-powered live scan feed
 - **Full audit trail** — Immutable log of every scan, approval, and action
@@ -130,9 +132,11 @@ vaultguard-ai/
 VaultGuard is designed around the principle of **delegated trust**:
 
 - **Token Vault** is the security boundary — OAuth refresh tokens never leave Auth0's infrastructure
+- **Step-up auth** verifies admin identity with MFA before any high-stakes action
 - **CIBA** ensures no AI agent acts without human approval — every remediation requires explicit consent
 - **FGA** enforces authorization policies at the API layer — not in application-level if/else blocks
 - **Audit logs** are append-only — immutable compliance-ready trail
+- **Agent transparency** — users can see exactly what data the agent accessed and which scopes it holds
 
 If VaultGuard's database is breached, there are no usable OAuth credentials to steal.
 

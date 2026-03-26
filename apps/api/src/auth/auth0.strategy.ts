@@ -29,8 +29,11 @@ export class Auth0Strategy extends PassportStrategy(Strategy) {
 
   // WHY: validate() runs after JWT signature is verified. The returned object
   // becomes req.user on every authenticated request.
+  // We pass through all claims so guards (StepUpGuard, FgaGuard) can read
+  // namespaced claims like amr/auth_time without knowing the namespace here.
   validate(payload: Record<string, unknown>) {
     return {
+      ...payload,
       sub: payload.sub as string,
       email: payload.email as string | undefined,
       orgId: payload.org_id as string | undefined,

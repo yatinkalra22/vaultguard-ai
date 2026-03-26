@@ -7,6 +7,7 @@ import { FindingsSummary } from "@/components/dashboard/FindingsSummary";
 import { RecentScans } from "@/components/dashboard/RecentScans";
 import { LiveScanFeed } from "@/components/dashboard/LiveScanFeed";
 import { TriggerScanButton } from "@/components/dashboard/TriggerScanButton";
+import { AgentPermissions } from "@/components/dashboard/AgentPermissions";
 
 /**
  * WHY: Client component because it fetches data and re-renders on scan events.
@@ -87,11 +88,17 @@ export default function OverviewPage() {
         />
       </div>
 
-      {/* Bottom row — recent scans + live feed */}
+      {/* Middle row — recent scans + live feed */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <RecentScans scans={data?.recentScans ?? []} loading={loading} />
         <LiveScanFeed />
       </div>
+
+      {/* Bottom row — agent permissions transparency panel */}
+      <AgentPermissions
+        slackConnected={(data?.connectedIntegrations ?? 0) > 0}
+        githubConnected={(data?.connectedIntegrations ?? 0) > 1}
+      />
     </div>
   );
 }

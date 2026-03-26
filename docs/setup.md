@@ -70,7 +70,33 @@ pnpm dev
 - Applications → VaultGuard Web → Advanced Settings → Grant Types
 - Enable: `urn:openid:params:grant-type:ciba`
 
-### 7. Set up FGA
+### 7. Enable MFA + Step-Up Authentication
+- Security → Multi-factor Auth → Enable at least one factor (OTP recommended)
+- Set MFA policy to **"Never"** (MFA is triggered only by our Post-Login Action, not globally)
+- Actions → Flows → Login → Create a new Action with this code:
+
+```javascript
+exports.onExecutePostLogin = async (event, api) => {
+  const MFA_POLICY = 'http://schemas.openid.net/pape/policies/2007/06/multi-factor';
+  const namespace = 'https://api.vaultguard.ai';
+
+  // Trigger MFA only when step-up is explicitly requested via acr_values
+  if (event.transaction?.acr_values?.includes(MFA_POLICY)) {
+    api.multifactor.enable('any', { allowRememberBrowser: false });
+  }
+
+  // Copy MFA status to access token so the backend StepUpGuard can read it
+  if (event.authentication?.methods) {
+    const usedMfa = event.authentication.methods.some(m => m.name === 'mfa');
+    if (usedMfa) {
+      api.accessToken.setCustomClaim(`${namespace}/amr`, ['mfa']);
+      api.accessToken.setCustomClaim(`${namespace}/auth_time`, Math.floor(Date.now() / 1000));
+    }
+  }
+};
+```
+
+### 8. Set up FGA
 - FGA tab → Create store: `vaultguard`
 - Apply authorization model from `scripts/setup-fga-model.sh`
 

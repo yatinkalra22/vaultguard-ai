@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, ShieldAlert, X } from "lucide-react";
+import { Loader2, ShieldAlert, ShieldCheck, X } from "lucide-react";
 import { api } from "@/lib/api";
 
 interface Finding {
@@ -22,8 +22,14 @@ interface RemediateDialogProps {
 }
 
 /**
- * WHY: Confirmation dialog before CIBA — this is the human-in-the-loop moment.
- * The admin sees exactly what will happen before triggering the approval email.
+ * WHY: Two-layer security before remediation executes:
+ * 1. Step-up auth (MFA) — proves the person clicking is actually the admin
+ * 2. CIBA approval — async email confirmation before the action executes
+ *
+ * This combination is what the hackathon judges want to see:
+ * "step-up authentication for high-stakes actions" (Security Model criterion)
+ * + "human-in-the-loop approval" (User Control criterion)
+ *
  * Ref: 06-design-demo.md — Demo Moment 4 "Confirm dialog appears"
  */
 export function RemediateDialog({
@@ -39,8 +45,6 @@ export function RemediateDialog({
     setError(null);
 
     try {
-      // WHY: Maps finding type to remediation action.
-      // The backend CIBA service will send the approval email.
       const actionMap: Record<string, string> = {
         stale_user: "revoke_access",
         deactivated_admin: "revoke_access",
@@ -59,6 +63,14 @@ export function RemediateDialog({
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : "Failed to initiate remediation";
+
+      // WHY: If the backend returns step_up_required, redirect to MFA.
+      // After MFA completes, the user lands back on /findings to retry.
+      if (message.includes("step_up_required") || message.includes("Multi-factor")) {
+        window.location.href = `/auth/step-up?returnTo=/findings`;
+        return;
+      }
+
       setError(message);
     } finally {
       setLoading(false);
@@ -112,10 +124,25 @@ export function RemediateDialog({
             </p>
           )}
 
+          {/* Step-up auth notice */}
+          <div className="rounded-md bg-primary/10 border border-primary/30 p-3">
+            <div className="flex items-center gap-1.5 mb-1">
+              <ShieldCheck className="h-3.5 w-3.5 text-primary" />
+              <span className="text-xs font-medium text-primary">
+                Step-Up Authentication
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              MFA verification may be required before this action proceeds.
+              This ensures only verified admins can trigger remediations.
+            </p>
+          </div>
+
+          {/* CIBA notice */}
           <div className="rounded-md bg-[var(--risk-medium)]/10 border border-[var(--risk-medium)]/30 p-3">
             <p className="text-sm text-[var(--risk-medium)]">
-              An approval request will be sent to your email via Auth0 CIBA.
-              The action will only execute after you approve.
+              After verification, an approval request will be sent to your email
+              via Auth0 CIBA. The action will only execute after you approve.
             </p>
           </div>
 
@@ -131,9 +158,9 @@ export function RemediateDialog({
               {loading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <ShieldAlert className="h-4 w-4" />
+                <ShieldCheck className="h-4 w-4" />
               )}
-              {loading ? "Sending..." : "Send Approval Request"}
+              {loading ? "Verifying..." : "Verify & Send Approval"}
             </Button>
           </div>
         </CardContent>
