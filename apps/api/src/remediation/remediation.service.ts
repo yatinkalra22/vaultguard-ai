@@ -63,7 +63,11 @@ export class RemediationService {
       .single();
 
     if (error) {
-      throw new Error(`Failed to create remediation: ${error.message}`);
+      // WHY: Log the actual DB error server-side, throw a generic message.
+      // The global exception filter catches this, but the message should be
+      // safe regardless in case it's caught by intermediate error handlers.
+      this.logger.error(`Failed to create remediation: ${error.message}`);
+      throw new Error('Failed to create remediation');
     }
 
     // 3. Update finding status

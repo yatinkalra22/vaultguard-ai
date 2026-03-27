@@ -55,7 +55,8 @@ export class SlackService {
       });
 
       if (!data.ok) {
-        throw new Error(`Slack API error: ${data.error}`);
+        this.logger.error(`Slack users.list API error: ${data.error}`);
+        throw new Error('Failed to fetch Slack users');
       }
 
       users.push(...data.members);
@@ -119,7 +120,10 @@ export class SlackService {
     );
 
     if (!data.ok) {
-      throw new Error(`Failed to deactivate Slack user: ${data.error}`);
+      // WHY: Log Slack API error detail server-side, throw generic message.
+      // Prevents leaking Slack-specific error codes to clients.
+      this.logger.error(`Failed to deactivate Slack user: ${data.error}`);
+      throw new Error('Failed to deactivate Slack user');
     }
   }
 }

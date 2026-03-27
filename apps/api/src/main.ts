@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
+import { GlobalExceptionFilter } from './common/global-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -11,6 +12,11 @@ async function bootstrap() {
   app.useGlobalPipes(
     new ValidationPipe({ transform: true, whitelist: true }),
   );
+
+  // WHY: Global exception filter prevents internal error details (DB errors,
+  // Slack/GitHub API responses, stack traces) from leaking to clients.
+  // HttpExceptions pass through; unhandled exceptions return a generic message.
+  app.useGlobalFilters(new GlobalExceptionFilter());
 
   // WHY: CORS restricted to FRONTEND_URL only — prevents unauthorized origins
   // from calling our API. Credentials: true needed for cookie-based auth flows.

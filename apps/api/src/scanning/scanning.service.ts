@@ -34,7 +34,8 @@ export class ScanningService {
       .single();
 
     if (scanError || !scan) {
-      throw new Error(`Failed to create scan record: ${scanError?.message}`);
+      this.logger.error(`Failed to create scan record: ${scanError?.message}`);
+      throw new Error('Failed to create scan record');
     }
 
     this.eventEmitter.emit('scan.started', { orgId, scanId: scan.id });
@@ -133,10 +134,12 @@ export class ScanningService {
         .update({ status: 'failed' })
         .eq('id', scan.id);
 
+      // WHY: Don't send internal error details via SSE — clients see a generic
+      // message. Full error is already logged above.
       this.eventEmitter.emit('scan.failed', {
         orgId,
         scanId: scan.id,
-        error: err.message,
+        error: 'Scan failed. Check server logs for details.',
       });
 
       throw err;
