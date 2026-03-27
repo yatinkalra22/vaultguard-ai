@@ -104,6 +104,18 @@ vaultguard-ai/
 └── .env.example
 ```
 
+## CI/CD
+
+GitHub Actions workflow (`.github/workflows/ci.yml`) runs on every push to `main` and all PRs:
+
+| Job | What it does |
+|-----|-------------|
+| **lint-and-typecheck** | `tsc --noEmit` on API, ESLint on web |
+| **build** | Full Turborepo build of both apps |
+| **audit** | `pnpm audit --prod` for known vulnerabilities |
+
+Build job depends on lint passing. Concurrency group cancels stale pipeline runs.
+
 ## API Rate Limiting
 
 Global rate limit: **100 requests/minute per IP** via `@nestjs/throttler`.

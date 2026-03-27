@@ -1,0 +1,93 @@
+# WHY: Automated CI prevents broken code from reaching main.
+# Runs type checking, linting, build verification, and dependency audit
+# on every push and PR. Catches issues before human review.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-and-typecheck:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 8
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # WHY: API lint is tsc --noEmit (see apps/api/package.json).
+      # Catches type errors before they reach production.
+      - name: Type check API
+        run: pnpm --filter @vaultguard/api lint
+
+      # WHY: Web lint runs ESLint with next config.
+      # Catches React, accessibility, and Next.js-specific issues.
+      - name: Lint Web
+        run: pnpm --filter @vaultguard/web lint
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: lint-and-typecheck
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 8
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # WHY: Build both apps to catch compilation errors that type
+      # checking alone might miss (e.g., missing env vars at build time,
+      # Next.js page generation errors, NestJS decorator metadata).
+      - name: Build all packages
+        run: pnpm build
+
+  audit:
+    name: Dependency Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 8
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # WHY: pnpm audit catches known vulnerabilities in transitive
+      # dependencies. --prod flag checks only production deps (not
+      # devDependencies) to reduce noise from build-only tools.
+      - name: Audit production dependencies
+        run: pnpm audit --prod

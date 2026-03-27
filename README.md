@@ -89,6 +89,7 @@ pnpm dev
 
 ```
 vaultguard-ai/
+├── .github/workflows/    # CI pipeline (lint, build, audit)
 ├── apps/
 │   ├── web/                # Next.js 16 frontend
 │   │   ├── src/app/        # App Router pages
