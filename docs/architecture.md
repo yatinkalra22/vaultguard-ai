@@ -54,6 +54,19 @@ VaultGuard AI is an AI-powered SaaS access governance agent. A security admin co
 | **FGA** | Policy enforcement on remediation endpoints | Only Security Admins can approve GitHub org-level changes; Team Leads for Slack. FgaGuard enforced on POST /remediations. Fail-closed in production. |
 | **Connected Accounts** | "Connect Slack / Connect GitHub" flow | User consents once; Token Vault handles refresh forever |
 
+## HTTP Security Headers
+
+All responses from the Next.js frontend include:
+
+| Header | Value | Purpose |
+|--------|-------|---------|
+| Content-Security-Policy | `default-src 'self'; script-src 'self' 'unsafe-inline'; ...` | Blocks XSS, unauthorized resource loading |
+| X-Frame-Options | DENY | Prevents clickjacking |
+| X-Content-Type-Options | nosniff | Prevents MIME sniffing |
+| Referrer-Policy | strict-origin-when-cross-origin | Limits referrer leakage |
+| Permissions-Policy | camera=(), microphone=(), geolocation=() | Disables unused browser APIs |
+| Strict-Transport-Security | max-age=31536000; includeSubDomains | Enforces HTTPS |
+
 ## Token Vault Flow
 
 1. Admin logs in via Auth0 Universal Login

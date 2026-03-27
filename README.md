@@ -135,6 +135,7 @@ VaultGuard is designed around the principle of **delegated trust**:
 - **Step-up auth** verifies admin identity with MFA before any high-stakes action
 - **CIBA** ensures no AI agent acts without human approval — every remediation requires explicit consent
 - **FGA** enforces authorization policies at the API layer via `FgaGuard` — fail-closed in production, not in application-level if/else blocks
+- **Security headers** — CSP, HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy
 - **Audit logs** are append-only — immutable compliance-ready trail
 - **Agent transparency** — users can see exactly what data the agent accessed and which scopes it holds
 
