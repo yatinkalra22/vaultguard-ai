@@ -21,5 +21,6 @@ dist/
 .DS_Store
 Thumbs.db
 
-# Internal plan (not for commits)
+# Internal docs (not for commits)
 docs/PLAN.md
+docs/SECURITY_AUDIT.md

@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { StepUpGuard } from '../auth/step-up.guard';
+import { FgaGuard } from '../auth/fga.guard';
 import { RemediationService } from './remediation.service';
 import { SupabaseService } from '../common/supabase.service';
 
@@ -26,9 +27,13 @@ export class RemediationController {
    * This is the "step-up authentication for high-stakes actions" pattern
    * that the hackathon judging criteria specifically calls out.
    * See: https://auth0.com/docs/secure/multi-factor-authentication/step-up-authentication
+   *
+   * WHY FgaGuard: Ensures only users with can_approve permission (org admins)
+   * can create remediations. Without this, any authenticated user could trigger
+   * remediation actions. FGA enforces policy-as-code at the API layer.
    */
   @Post()
-  @UseGuards(StepUpGuard)
+  @UseGuards(StepUpGuard, FgaGuard)
   async createRemediation(
     @Body()
     body: {

@@ -9,7 +9,7 @@ VaultGuard AI is an AI-powered SaaS access governance agent. A security admin co
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
 │                        BROWSER (Admin)                              │
-│              Next.js 14 App Router  (Vercel)                        │
+│              Next.js 16 App Router  (Vercel)                        │
 │   Dashboard │ Findings │ Integrations │ Audit Log │ Settings        │
 └────────────────────────────┬────────────────────────────────────────┘
                              │ HTTPS / REST + SSE
@@ -51,7 +51,7 @@ VaultGuard AI is an AI-powered SaaS access governance agent. A security admin co
 | **Universal Login** | Admin signs into VaultGuard | Standard SSO login |
 | **Token Vault** | Stores Slack + GitHub OAuth tokens | Agents use token exchange to call APIs without exposing credentials |
 | **CIBA** | Before any remediation action | Sends push/email to admin for approval before revoking access |
-| **FGA** | Policy enforcement | Only Security Admins can approve GitHub org-level changes; Team Leads for Slack |
+| **FGA** | Policy enforcement on remediation endpoints | Only Security Admins can approve GitHub org-level changes; Team Leads for Slack. FgaGuard enforced on POST /remediations. Fail-closed in production. |
 | **Connected Accounts** | "Connect Slack / Connect GitHub" flow | User consents once; Token Vault handles refresh forever |
 
 ## Token Vault Flow
@@ -80,7 +80,7 @@ See `scripts/setup-database.sql` for the full schema. Key tables:
 ```
 vaultguard-ai/
 ├── apps/
-│   ├── web/          # Next.js 14 frontend
+│   ├── web/          # Next.js 16 frontend
 │   └── api/          # NestJS backend
 ├── packages/
 │   └── shared/       # Shared TypeScript types

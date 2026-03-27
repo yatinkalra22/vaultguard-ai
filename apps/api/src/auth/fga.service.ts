@@ -50,13 +50,25 @@ export class FgaService {
 
   /**
    * Check if a user can approve a remediation for an org.
-   * Returns true if FGA is not configured (permissive fallback for dev).
+   * WHY fail-closed in production: If FGA is not configured in production,
+   * deny all remediation requests. A permissive fallback would let any
+   * authenticated user approve remediations — defeating the purpose of FGA.
+   * In development, allow without FGA so devs can test without full setup.
    */
   async canApproveRemediation(
     userId: string,
     orgId: string,
   ): Promise<boolean> {
-    if (!this.client) return true;
+    if (!this.client) {
+      const isProduction = this.config.get('NODE_ENV') === 'production';
+      if (isProduction) {
+        this.logger.error(
+          'FGA not configured in production — denying remediation approval',
+        );
+        return false;
+      }
+      return true;
+    }
 
     try {
       const { allowed } = await this.client.check({
