@@ -1,6 +1,7 @@
 import { Controller, Get, Req, Sse, UseGuards } from '@nestjs/common';
 import { Observable, Subject, filter, map } from 'rxjs';
 import { OnEvent } from '@nestjs/event-emitter';
+import { SkipThrottle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { DashboardService } from './dashboard.service';
 
@@ -52,6 +53,8 @@ export class DashboardController {
    * the HTTP connection open. The client uses EventSource to subscribe.
    * Ref: 01-architecture.md — "SSE /api/dashboard/events"
    */
+  // WHY: SSE is a long-lived connection — throttling it would kill the stream.
+  @SkipThrottle()
   @Sse('events')
   events(@Req() req: any): Observable<MessageEvent> {
     const orgId = req.user?.org_id ?? 'default';

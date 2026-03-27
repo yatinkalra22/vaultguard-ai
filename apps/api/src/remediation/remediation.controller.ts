@@ -7,6 +7,7 @@ import {
   Request,
   UseGuards,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { StepUpGuard } from '../auth/step-up.guard';
 import { FgaGuard } from '../auth/fga.guard';
@@ -32,7 +33,11 @@ export class RemediationController {
    * can create remediations. Without this, any authenticated user could trigger
    * remediation actions. FGA enforces policy-as-code at the API layer.
    */
+  // WHY: 5 remediation requests per minute — remediations are high-stakes
+  // actions that trigger CIBA approval flows and external API calls.
+  // Stricter than the global 100/min to prevent abuse of expensive operations.
   @Post()
+  @Throttle({ default: { ttl: 60_000, limit: 5 } })
   @UseGuards(StepUpGuard, FgaGuard)
   async createRemediation(
     @Body()

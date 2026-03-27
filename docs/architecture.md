@@ -91,6 +91,18 @@ vaultguard-ai/
 └── .env.example
 ```
 
+## API Rate Limiting
+
+Global rate limit: **100 requests/minute per IP** via `@nestjs/throttler`.
+
+| Endpoint | Limit | Reason |
+|----------|-------|--------|
+| `POST /api/remediations` | 5/min | Triggers CIBA approval + external API calls |
+| `POST /api/scans/trigger` | 3/min | Calls Slack/GitHub APIs + Claude AI analysis |
+| `GET /api/health` | No limit | Load balancer health checks |
+| `SSE /api/dashboard/events` | No limit | Long-lived connection |
+| All other endpoints | 100/min | Global default |
+
 ## API Endpoints
 
 See the backend source code for full endpoint documentation. Key groups:
