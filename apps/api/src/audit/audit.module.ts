@@ -1,12 +1,13 @@
 import { Global, Module } from '@nestjs/common';
 import { AuditService } from './audit.service';
+import { AuditRetentionService } from './audit.retention';
 import { AuditController } from './audit.controller';
 
 // WHY: @Global() because audit logging is needed across multiple modules
 // (scanning, remediation, findings). Making it global avoids circular imports.
 @Global()
 @Module({
-  providers: [AuditService],
+  providers: [AuditService, AuditRetentionService],
   controllers: [AuditController],
   exports: [AuditService],
 })

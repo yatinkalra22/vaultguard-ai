@@ -123,6 +123,7 @@ exports.onExecutePostLogin = async (event, api) => {
 |--------|---------|
 | `scripts/setup-local.sh` | Full local setup (prereqs, deps, build check) |
 | `scripts/setup-database.sql` | Idempotent database schema (run in Supabase SQL Editor) |
+| `scripts/setup-retention.sql` | Data retention functions — run after setup-database.sql |
 | `scripts/seed-database.sql` | Test data for local development |
 | `scripts/setup-fga-model.sh` | Deploy Auth0 FGA authorization model |
 | `scripts/deploy-web.sh` | Deploy frontend to Vercel (`--prod` for production) |

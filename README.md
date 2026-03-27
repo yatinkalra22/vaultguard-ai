@@ -112,6 +112,7 @@ vaultguard-ai/
 ├── scripts/
 │   ├── setup-local.sh      # Local dev setup
 │   ├── setup-database.sql  # Database schema
+│   ├── setup-retention.sql # Data retention policy (90d audit, 30d scans)
 │   ├── seed-database.sql   # Test data
 │   ├── seed-demo.sql       # Demo data (10 findings)
 │   ├── setup-fga-model.sh  # FGA authorization model

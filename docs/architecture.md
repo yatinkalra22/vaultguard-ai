@@ -88,6 +88,17 @@ See `scripts/setup-database.sql` for the full schema. Key tables:
 - `remediations` — CIBA-based remediation requests
 - `audit_logs` — Full audit trail
 
+### Data Retention
+
+| Table | Retention | Condition |
+|-------|-----------|-----------|
+| `audit_logs` | 90 days | Always deleted after 90 days |
+| `scans` | 30 days | Only if all linked findings are resolved |
+| `findings` | 30 days | Only if status is `remediated` or `ignored` |
+| `remediations` | Kept with finding | Cascades with parent finding |
+
+Cleanup runs daily at 3 AM UTC via `AuditRetentionService`. SQL functions in `scripts/setup-retention.sql` are available for `pg_cron` as an alternative.
+
 ## Monorepo Structure
 
 ```
