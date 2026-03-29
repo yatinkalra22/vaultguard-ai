@@ -23,6 +23,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
+    const requestId = (request as any).id ?? 'unknown';
 
     // WHY: HttpExceptions (thrown by guards, validators, controllers) are
     // intentional — their messages are safe to return to clients.
@@ -30,10 +31,10 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       const status = exception.getStatus();
       const exceptionResponse = exception.getResponse();
 
-      // Log 5xx server errors with full details
+      // Log 5xx server errors with full details + request ID for correlation
       if (status >= 500) {
         this.logger.error(
-          `${request.method} ${request.url} — ${status}`,
+          `[${requestId}] ${request.method} ${request.url} — ${status}`,
           exception.stack,
         );
       }
@@ -49,7 +50,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     // WHY: Unhandled exceptions (thrown by services, DB errors, external API
     // failures) are not safe to return. Log full details, return generic message.
     this.logger.error(
-      `${request.method} ${request.url} — Unhandled exception`,
+      `[${requestId}] ${request.method} ${request.url} — Unhandled exception`,
       exception instanceof Error ? exception.stack : String(exception),
     );
 

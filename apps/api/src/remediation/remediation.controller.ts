@@ -11,6 +11,7 @@ import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { StepUpGuard } from '../auth/step-up.guard';
 import { FgaGuard } from '../auth/fga.guard';
+import { CreateRemediationDto } from './dto/create-remediation.dto';
 import { RemediationService } from './remediation.service';
 import { SupabaseService } from '../common/supabase.service';
 
@@ -40,12 +41,7 @@ export class RemediationController {
   @Throttle({ default: { ttl: 60_000, limit: 5 } })
   @UseGuards(StepUpGuard, FgaGuard)
   async createRemediation(
-    @Body()
-    body: {
-      findingId: string;
-      action: string;
-      targetEntity: Record<string, unknown>;
-    },
+    @Body() body: CreateRemediationDto,
     @Request() req: { user: { sub: string; orgId?: string } },
   ) {
     const orgId = req.user.orgId;

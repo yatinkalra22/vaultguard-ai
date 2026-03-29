@@ -127,6 +127,19 @@ GitHub Actions workflow (`.github/workflows/ci.yml`) runs on every push to `main
 
 Build job depends on lint passing. Concurrency group cancels stale pipeline runs.
 
+## API Hardening
+
+The NestJS API includes the following defense-in-depth measures (configured in `apps/api/src/main.ts`):
+
+| Layer | Implementation |
+|-------|---------------|
+| **Security headers** | Helmet.js — removes X-Powered-By, adds X-DNS-Prefetch-Control, etc. |
+| **Payload limits** | JSON/URL-encoded bodies capped at 1mb |
+| **Request tracking** | UUID per request via `X-Request-Id` header (generated or forwarded from LB) |
+| **Input validation** | `class-validator` DTOs + global `ValidationPipe` with `whitelist: true` |
+| **CORS** | `FRONTEND_URL` required in production; localhost fallback only in dev |
+| **Structured logging** | `nestjs-pino` — JSON in production, pretty-print in dev, auth headers redacted |
+
 ## API Rate Limiting
 
 Global rate limit: **100 requests/minute per IP** via `@nestjs/throttler`.
