@@ -45,11 +45,19 @@ class TelemetryService {
     // Only setup in browser
     if (typeof window !== 'undefined') {
       // Flush on page unload
-      window.addEventListener('beforeunload', () => this.flush());
+      window.addEventListener('beforeunload', this.handleBeforeUnload);
       // Periodic flush
-      setInterval(() => this.flushIfReady(), this.batchTimeoutMs);
+      this.batchTimer = setInterval(() => this.flushIfReady(), this.batchTimeoutMs);
     }
   }
+
+  private handleBeforeUnload = () => {
+    this.flush();
+    if (this.batchTimer) {
+      clearInterval(this.batchTimer);
+      this.batchTimer = null;
+    }
+  };
 
   logError(event: ErrorEvent) {
     event.timestamp = Date.now();

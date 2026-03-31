@@ -118,37 +118,54 @@ export class RemediationController {
         });
       }
 
+      const uniqueFindingIds = Array.from(new Set(body.findingIds));
+      if (uniqueFindingIds.length > 25) {
+        throw new ForbiddenException({
+          code: ERROR_CODES.VALIDATION_FAILED,
+          message: 'Batch remediation limit is 25 findings per request',
+        });
+      }
+
       // Log batch approval action
       await this.supabase.client.from('audit_logs').insert({
         org_id: orgId,
         actor: req.user.sub,
         action: 'remediation.batch_approved',
-        target: { finding_ids: body.findingIds, count: body.findingIds.length },
+        target: { finding_ids: uniqueFindingIds, count: uniqueFindingIds.length },
       });
 
       const successful: string[] = [];
       const failed: Array<{ findingId: string; reason: string }> = [];
 
-      for (const findingId of body.findingIds) {
-        try {
-          await this.remediationService.requestRemediation({
+      const results = await Promise.allSettled(
+        uniqueFindingIds.map((findingId) =>
+          this.remediationService.requestRemediation({
             findingId,
             orgId,
             userSub: req.user.sub,
             action: '',
             targetEntity: {},
-          });
+          }),
+        ),
+      );
+
+      for (const [index, result] of results.entries()) {
+        const findingId = uniqueFindingIds[index];
+        if (result.status === 'fulfilled') {
           successful.push(findingId);
-        } catch (err: unknown) {
-          const reason =
-            err instanceof Error ? err.message : 'Failed to queue remediation';
-          failed.push({ findingId, reason });
+          continue;
         }
+
+        const reason =
+          result.reason instanceof Error
+            ? result.reason.message
+            : 'Failed to queue remediation';
+        failed.push({ findingId, reason });
       }
 
       return {
         batchId: `batch-${Date.now()}`,
-        requested: body.findingIds.length,
+        requested: uniqueFindingIds.length,
         queued: successful.length,
         failedCount: failed.length,
         failed,
