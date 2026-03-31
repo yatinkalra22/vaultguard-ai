@@ -114,19 +114,55 @@ export class RemediationController {
 
       const uniqueFindingIds = Array.from(new Set(body.findingIds));
 
+      const { data: findings } = await this.supabase.client
+        .from('findings')
+        .select('id,status')
+        .eq('org_id', orgId)
+        .in('id', uniqueFindingIds);
+
+      const findingMap = new Map(
+        (findings ?? []).map((finding) => [finding.id as string, finding]),
+      );
+
+      const eligibleFindingIds: string[] = [];
+      const skipped: Array<{ findingId: string; reason: string }> = [];
+
+      for (const findingId of uniqueFindingIds) {
+        const finding = findingMap.get(findingId);
+        if (!finding) {
+          skipped.push({ findingId, reason: 'Finding not found in organization' });
+          continue;
+        }
+
+        if (finding.status !== 'open') {
+          skipped.push({
+            findingId,
+            reason: `Finding is not open (status: ${String(finding.status)})`,
+          });
+          continue;
+        }
+
+        eligibleFindingIds.push(findingId);
+      }
+
       // Log batch approval action
       await this.supabase.client.from('audit_logs').insert({
         org_id: orgId,
         actor: req.user.sub,
         action: 'remediation.batch_approved',
-        target: { finding_ids: uniqueFindingIds, count: uniqueFindingIds.length },
+        target: {
+          finding_ids: uniqueFindingIds,
+          count: uniqueFindingIds.length,
+          eligible_count: eligibleFindingIds.length,
+          skipped_count: skipped.length,
+        },
       });
 
       const successful: string[] = [];
       const failed: Array<{ findingId: string; reason: string }> = [];
 
       const results = await Promise.allSettled(
-        uniqueFindingIds.map((findingId) =>
+        eligibleFindingIds.map((findingId) =>
           this.remediationService.requestRemediation({
             findingId,
             orgId,
@@ -138,7 +174,7 @@ export class RemediationController {
       );
 
       for (const [index, result] of results.entries()) {
-        const findingId = uniqueFindingIds[index];
+        const findingId = eligibleFindingIds[index];
         if (result.status === 'fulfilled') {
           successful.push(findingId);
           continue;
@@ -154,6 +190,8 @@ export class RemediationController {
       return {
         batchId: `batch-${Date.now()}`,
         requested: uniqueFindingIds.length,
+        skippedCount: skipped.length,
+        skipped,
         queued: successful.length,
         failedCount: failed.length,
         failed,
