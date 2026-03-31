@@ -8,6 +8,8 @@ import { RecentScans } from "@/components/dashboard/RecentScans";
 import { LiveScanFeed } from "@/components/dashboard/LiveScanFeed";
 import { TriggerScanButton } from "@/components/dashboard/TriggerScanButton";
 import { AgentPermissions } from "@/components/dashboard/AgentPermissions";
+import { DashboardMetricsDisplay } from "@/components/dashboard/MetricsDisplay";
+import { useMetrics } from "@/hooks/useMetrics";
 
 /**
  * WHY: Client component because it fetches data and re-renders on scan events.
@@ -39,6 +41,7 @@ interface DashboardSummary {
 export default function OverviewPage() {
   const [data, setData] = useState<DashboardSummary | null>(null);
   const [loading, setLoading] = useState(true);
+  const { metrics, loading: metricsLoading } = useMetrics();
 
   useEffect(() => {
     api
@@ -87,6 +90,14 @@ export default function OverviewPage() {
           loading={loading}
         />
       </div>
+
+      {/* KPI Dashboard — Real-time metrics */}
+      {metrics && !metricsLoading && (
+        <div>
+          <h2 className="text-lg font-semibold mb-4">Real-Time Metrics</h2>
+          <DashboardMetricsDisplay metrics={metrics} />
+        </div>
+      )}
 
       {/* Middle row — recent scans + live feed */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

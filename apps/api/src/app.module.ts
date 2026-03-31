@@ -18,6 +18,7 @@ import { AuditModule } from './audit/audit.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { IntegrationsModule } from './integrations/integrations.module';
 import { TelemetryModule } from './telemetry/telemetry.module';
+import { MetricsModule } from './metrics/metrics.module';
 import { HealthController } from './health.controller';
 
 @Module({
@@ -68,6 +69,7 @@ import { HealthController } from './health.controller';
     DashboardModule,
     IntegrationsModule,
     TelemetryModule,
+    MetricsModule,
   ],
   controllers: [HealthController, AuthController],
   providers: [

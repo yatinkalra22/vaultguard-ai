@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, ShieldAlert, ShieldCheck, X } from "lucide-react";
 import { api, isStepUpRequiredError, showErrorToast, showSuccessToast } from "@/lib/api";
+import { triggerMetricsRefresh } from "@/hooks/useMetrics";
 
 interface Finding {
   id: string;
@@ -62,6 +63,7 @@ export function RemediateDialog({
       });
 
       showSuccessToast("Remediation initiated", "Remediation request sent for approval");
+      triggerMetricsRefresh();
       onSuccess();
     } catch (err: unknown) {
       // WHY: If the backend returns step_up_required, redirect to MFA.

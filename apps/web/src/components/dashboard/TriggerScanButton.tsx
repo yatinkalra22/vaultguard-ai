@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Play, Loader2 } from "lucide-react";
 import { api, showErrorToast, showSuccessToast } from "@/lib/api";
+import { triggerMetricsRefresh } from "@/hooks/useMetrics";
 
 /**
  * WHY: Manual scan trigger is the first demo action — "click Run Scan Now,
@@ -19,6 +20,7 @@ export function TriggerScanButton() {
     try {
       await api.post("scans/trigger");
       showSuccessToast("Scan started", "Scanning your connected SaaS tools...");
+      triggerMetricsRefresh();
     } catch (err: unknown) {
       showErrorToast(err, "trigger_scan");
     } finally {
