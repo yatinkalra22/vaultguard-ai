@@ -4,12 +4,14 @@ import {
   Get,
   Param,
   Body,
+  Headers,
   Request,
   UseGuards,
   ForbiddenException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
-import { randomUUID } from 'crypto';
+import { createHash, randomUUID } from 'crypto';
 import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { StepUpGuard } from '../auth/step-up.guard';
@@ -23,10 +25,56 @@ import { ERROR_CODES } from '../common/error-codes';
 @Controller('remediations')
 @UseGuards(JwtAuthGuard)
 export class RemediationController {
+  private readonly logger = new Logger(RemediationController.name);
+  private static readonly idempotencyCache = new Map<
+    string,
+    { expiresAt: number; response: Record<string, unknown> }
+  >();
+  private readonly idempotencyTtlMs = 10 * 60 * 1000;
+
   constructor(
     private readonly remediationService: RemediationService,
     private readonly supabase: SupabaseService,
   ) {}
+
+  private cleanupIdempotencyCache() {
+    const now = Date.now();
+    for (const [key, entry] of RemediationController.idempotencyCache) {
+      if (entry.expiresAt <= now) {
+        RemediationController.idempotencyCache.delete(key);
+      }
+    }
+  }
+
+  private normalizeIdempotencyKey(value?: string): string | null {
+    if (!value) return null;
+    const key = value.trim();
+    if (key.length < 8 || key.length > 128) {
+      throw new BadRequestException({
+        code: ERROR_CODES.VALIDATION_FAILED,
+        message: 'Idempotency key must be between 8 and 128 characters',
+      });
+    }
+
+    if (!/^[A-Za-z0-9:_-]+$/.test(key)) {
+      throw new BadRequestException({
+        code: ERROR_CODES.VALIDATION_FAILED,
+        message: 'Idempotency key contains invalid characters',
+      });
+    }
+
+    return key;
+  }
+
+  private idempotencyCacheKey(
+    orgId: string,
+    userSub: string,
+    findingIds: string[],
+    idempotencyKey: string,
+  ): string {
+    const payload = `${orgId}|${userSub}|${findingIds.join(',')}|${idempotencyKey}`;
+    return createHash('sha256').update(payload).digest('hex');
+  }
 
   /**
    * Create a remediation request — triggers CIBA approval flow.
@@ -104,8 +152,10 @@ export class RemediationController {
     @UseGuards(StepUpGuard, FgaGuard)
     async batchApproveRemediations(
       @Body() body: BatchApproveRemediationDto,
+      @Headers('x-idempotency-key') idempotencyHeader: string | undefined,
       @Request() req: { user: { sub: string; orgId?: string } },
     ) {
+      const startedAt = Date.now();
       const orgId = req.user.orgId;
       if (!orgId) {
         throw new ForbiddenException({
@@ -120,6 +170,26 @@ export class RemediationController {
           code: ERROR_CODES.VALIDATION_FAILED,
           message: 'At least one finding ID is required',
         });
+      }
+
+      const idempotencyKey = this.normalizeIdempotencyKey(idempotencyHeader);
+      let idempotencyCacheKey: string | null = null;
+      if (idempotencyKey) {
+        this.cleanupIdempotencyCache();
+        idempotencyCacheKey = this.idempotencyCacheKey(
+          orgId,
+          req.user.sub,
+          uniqueFindingIds,
+          idempotencyKey,
+        );
+        const cached = RemediationController.idempotencyCache.get(idempotencyCacheKey);
+        if (cached && cached.expiresAt > Date.now()) {
+          this.logger.log('Returning idempotent replay for batch remediation');
+          return {
+            ...cached.response,
+            idempotentReplay: true,
+          };
+        }
       }
 
       const { data: findings } = await this.supabase.client
@@ -167,7 +237,7 @@ export class RemediationController {
       });
 
       if (eligibleFindingIds.length === 0) {
-        return {
+        const response = {
           batchId: `batch-${randomUUID()}`,
           requested: uniqueFindingIds.length,
           skippedCount: skipped.length,
@@ -176,8 +246,33 @@ export class RemediationController {
           failedCount: 0,
           failed: [],
           status: 'skipped',
+          durationMs: Date.now() - startedAt,
           message: 'No eligible open findings to queue for remediation',
         };
+
+        if (idempotencyCacheKey) {
+          RemediationController.idempotencyCache.set(idempotencyCacheKey, {
+            expiresAt: Date.now() + this.idempotencyTtlMs,
+            response,
+          });
+        }
+
+        await this.supabase.client.from('audit_logs').insert({
+          org_id: orgId,
+          actor: req.user.sub,
+          action: 'remediation.batch_processed',
+          target: {
+            batch_id: response.batchId,
+            status: response.status,
+            requested: response.requested,
+            queued: response.queued,
+            failed_count: response.failedCount,
+            skipped_count: response.skippedCount,
+            duration_ms: response.durationMs,
+          },
+        });
+
+        return response;
       }
 
       const successful: string[] = [];
@@ -209,7 +304,7 @@ export class RemediationController {
         failed.push({ findingId, reason });
       }
 
-      return {
+      const response = {
         batchId: `batch-${randomUUID()}`,
         requested: uniqueFindingIds.length,
         skippedCount: skipped.length,
@@ -218,7 +313,32 @@ export class RemediationController {
         failedCount: failed.length,
         failed,
         status: failed.length > 0 ? 'partial' : 'queued',
+        durationMs: Date.now() - startedAt,
         message: `${successful.length} remediation approval request(s) submitted`,
       };
+
+      if (idempotencyCacheKey) {
+        RemediationController.idempotencyCache.set(idempotencyCacheKey, {
+          expiresAt: Date.now() + this.idempotencyTtlMs,
+          response,
+        });
+      }
+
+      await this.supabase.client.from('audit_logs').insert({
+        org_id: orgId,
+        actor: req.user.sub,
+        action: 'remediation.batch_processed',
+        target: {
+          batch_id: response.batchId,
+          status: response.status,
+          requested: response.requested,
+          queued: response.queued,
+          failed_count: response.failedCount,
+          skipped_count: response.skippedCount,
+          duration_ms: response.durationMs,
+        },
+      });
+
+      return response;
     }
   }

@@ -104,6 +104,10 @@ Use this checklist before demos, staging, or production deploys.
 - [ ] `ENABLE_DEMO_ENDPOINTS` is **unset** (or `false`) outside demo environments
 - [ ] Production startup should fail if either flag is `true`
 
+### API Reliability
+
+- [ ] Batch remediation requests support `x-idempotency-key` to prevent duplicate queues on retries/double-submits
+
 ### Local Development Defaults
 
 - [ ] If running locally without full Auth0/FGA setup, set `NODE_ENV=development`

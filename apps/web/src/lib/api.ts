@@ -228,11 +228,18 @@ export const api = {
     return requestWithRetry<T>(() => fetch(`${BASE}/${path}${query}`));
   },
 
-  async post<T>(path: string, body?: unknown): Promise<T> {
+  async post<T>(
+    path: string,
+    body?: unknown,
+    options?: { headers?: Record<string, string> },
+  ): Promise<T> {
     return requestWithRetry<T>(() =>
       fetch(`${BASE}/${path}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(options?.headers ?? {}),
+        },
         body: body ? JSON.stringify(body) : undefined,
       })
     );

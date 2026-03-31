@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { api } from '@/lib/api';
 import { CheckCircle2, AlertTriangle, Loader } from 'lucide-react';
-import { showSuccessToast, showErrorToast } from '@/lib/api';
+import { showSuccessToast, showErrorToast, showWarningToast } from '@/lib/api';
 
 interface ApprovalDialogProps {
   findings: Array<{
@@ -14,6 +14,14 @@ interface ApprovalDialogProps {
   }>;
   onClose: () => void;
   onApprove: () => void;
+}
+
+interface BatchApproveResponse {
+  status: 'queued' | 'partial' | 'skipped';
+  requested: number;
+  queued: number;
+  failedCount: number;
+  skippedCount: number;
 }
 
 export function RemediationApprovalDialog({
@@ -42,15 +50,34 @@ export function RemediationApprovalDialog({
 
     setApproving(true);
     try {
-      await api.post('/remediations/batch-approve', {
-        findingIds: Array.from(selectedFindings),
-      });
+      const idempotencyKey =
+        typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+          ? `remediation-batch-${crypto.randomUUID()}`
+          : `remediation-batch-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 
-        showSuccessToast(
-          `Approval requests submitted for ${selectedFindings.size} finding(s)`,
-          undefined,
-          4000,
-        );
+      const result = await api.post<BatchApproveResponse>(
+        '/remediations/batch-approve',
+        {
+          findingIds: Array.from(selectedFindings),
+        },
+        {
+          headers: {
+            'x-idempotency-key': idempotencyKey,
+          },
+        },
+      );
+
+      if (result.status === 'skipped') {
+        showWarningToast('No eligible open findings to queue for remediation');
+        onClose();
+        return;
+      }
+
+      showSuccessToast(
+        `Approval requests submitted: ${result.queued}/${result.requested}`,
+        undefined,
+        4000,
+      );
 
       onApprove();
       onClose();
