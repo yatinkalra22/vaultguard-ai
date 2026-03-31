@@ -1,10 +1,11 @@
-import { Controller, Get, Req, Sse, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Req, Sse, UseGuards } from '@nestjs/common';
 import { Observable, Subject, filter, map } from 'rxjs';
 import { OnEvent } from '@nestjs/event-emitter';
 import { SkipThrottle } from '@nestjs/throttler';
 import { Request } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { DashboardService } from './dashboard.service';
+import { SupabaseService } from '../common/supabase.service';
 
 /**
  * WHY: SSE (Server-Sent Events) for real-time dashboard updates instead of WebSockets.
@@ -40,7 +41,10 @@ export class DashboardController {
   // and the SSE Observable stream. Each connected client subscribes to this subject.
   private readonly eventSubject = new Subject<ScanEvent>();
 
-  constructor(private readonly dashboardService: DashboardService) {}
+  constructor(
+    private readonly dashboardService: DashboardService,
+    private readonly supabase: SupabaseService,
+  ) {}
 
   /**
    * GET /api/dashboard/summary
@@ -52,6 +56,172 @@ export class DashboardController {
     // Fallback to 'default' for local dev where org_id may not be in the token.
     const orgId = req.user?.orgId ?? req.user?.org_id ?? 'default';
     return this.dashboardService.getSummary(orgId);
+  }
+
+  /**
+   * GET /api/dashboard/timeline
+   * Unified incident timeline for demo storytelling.
+   */
+  @Get('timeline')
+  async getTimeline(@Req() req: AuthenticatedRequest) {
+    const orgId = req.user?.orgId ?? req.user?.org_id ?? 'default';
+
+    const [scansRes, alertsRes, auditRes] = await Promise.all([
+      this.supabase.client
+        .from('scans')
+        .select('id,status,findings_count,started_at,completed_at')
+        .eq('org_id', orgId)
+        .order('started_at', { ascending: false })
+        .limit(10),
+      this.supabase.client
+        .from('alert_incidents')
+        .select('id,reason,status,duplicate_count,updated_at')
+        .eq('org_id', orgId)
+        .order('updated_at', { ascending: false })
+        .limit(10),
+      this.supabase.client
+        .from('audit_logs')
+        .select('id,action,actor,target,created_at')
+        .eq('org_id', orgId)
+        .order('created_at', { ascending: false })
+        .limit(15),
+    ]);
+
+    const events = [
+      ...(scansRes.data ?? []).map((scan) => ({
+        id: `scan-${scan.id}`,
+        type: 'scan',
+        title: `Scan ${scan.status}`,
+        description: `Findings: ${scan.findings_count ?? 0}`,
+        timestamp: scan.completed_at ?? scan.started_at,
+      })),
+      ...(alertsRes.data ?? []).map((alert) => ({
+        id: `alert-${alert.id}`,
+        type: 'alert',
+        title: `Alert ${alert.status}`,
+        description: `${alert.reason} (x${alert.duplicate_count ?? 1})`,
+        timestamp: alert.updated_at,
+      })),
+      ...(auditRes.data ?? []).map((log) => ({
+        id: `audit-${log.id}`,
+        type: 'audit',
+        title: log.action,
+        description: `Actor: ${log.actor}`,
+        timestamp: log.created_at,
+      })),
+    ]
+      .filter((event) => Boolean(event.timestamp))
+      .sort(
+        (a, b) =>
+          new Date(b.timestamp as string).getTime() -
+          new Date(a.timestamp as string).getTime(),
+      )
+      .slice(0, 25);
+
+    return events;
+  }
+
+  /**
+   * POST /api/dashboard/demo-seed
+   * Seed deterministic demo data for reliable presentations.
+   */
+  @Post('demo-seed')
+  async seedDemo(@Req() req: AuthenticatedRequest) {
+    const orgId = req.user?.orgId ?? req.user?.org_id ?? 'default';
+    const actor = 'demo-seed';
+
+    await this.supabase.client
+      .from('scans')
+      .insert([
+        {
+          org_id: orgId,
+          provider: 'all',
+          status: 'completed',
+          findings_count: 8,
+          started_at: new Date(Date.now() - 1000 * 60 * 45).toISOString(),
+          completed_at: new Date(Date.now() - 1000 * 60 * 42).toISOString(),
+        },
+        {
+          org_id: orgId,
+          provider: 'all',
+          status: 'completed',
+          findings_count: 5,
+          started_at: new Date(Date.now() - 1000 * 60 * 18).toISOString(),
+          completed_at: new Date(Date.now() - 1000 * 60 * 14).toISOString(),
+        },
+      ]);
+
+    await this.supabase.client.from('findings').insert([
+      {
+        org_id: orgId,
+        provider: 'github',
+        severity: 'critical',
+        type: 'shadow_app',
+        title: 'Unapproved OAuth app has broad repo scope',
+        description: 'App can read private repositories and organization metadata.',
+        status: 'open',
+      },
+      {
+        org_id: orgId,
+        provider: 'slack',
+        severity: 'high',
+        type: 'stale_user',
+        title: 'Inactive admin retains workspace owner role',
+        description: 'Owner has been inactive for 74 days.',
+        status: 'open',
+      },
+    ]);
+
+    await this.supabase.client.from('alert_incidents').insert([
+      {
+        org_id: orgId,
+        reason: 'risk_threshold_exceeded',
+        status: 'open',
+        current_risk_score: 73,
+        critical_findings: 4,
+        duplicate_count: 2,
+      },
+    ]);
+
+    await this.supabase.client.from('audit_logs').insert([
+      {
+        org_id: orgId,
+        actor,
+        action: 'demo.seeded',
+        target: { mode: 'reliable-demo' },
+      },
+    ]);
+
+    return { ok: true, message: 'Demo data seeded' };
+  }
+
+  /**
+   * POST /api/dashboard/demo-reset
+   * Clear demo-generated data for clean reruns.
+   */
+  @Post('demo-reset')
+  async resetDemo(@Req() req: AuthenticatedRequest) {
+    const orgId = req.user?.orgId ?? req.user?.org_id ?? 'default';
+
+    await Promise.all([
+      this.supabase.client
+        .from('findings')
+        .delete()
+        .eq('org_id', orgId)
+        .in('type', ['shadow_app', 'stale_user']),
+      this.supabase.client
+        .from('alert_incidents')
+        .delete()
+        .eq('org_id', orgId)
+        .in('reason', ['risk_threshold_exceeded']),
+      this.supabase.client
+        .from('audit_logs')
+        .delete()
+        .eq('org_id', orgId)
+        .in('action', ['demo.seeded']),
+    ]);
+
+    return { ok: true, message: 'Demo data reset' };
   }
 
   /**

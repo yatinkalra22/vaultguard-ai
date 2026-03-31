@@ -10,6 +10,7 @@ import { TriggerScanButton } from "@/components/dashboard/TriggerScanButton";
 import { AgentPermissions } from "@/components/dashboard/AgentPermissions";
 import { DashboardMetricsDisplay } from "@/components/dashboard/MetricsDisplay";
 import { AlertHistoryPanel } from "@/components/dashboard/AlertHistoryPanel";
+import { IncidentTimelinePanel } from "@/components/dashboard/IncidentTimelinePanel";
 import { FindingsChart } from "@/components/findings/FindingsChart";
 import { useMetrics } from "@/hooks/useMetrics";
 
@@ -160,7 +161,10 @@ export default function OverviewPage() {
       </div>
 
       {/* Alert history */}
-      <AlertHistoryPanel />
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+        <AlertHistoryPanel />
+        <IncidentTimelinePanel />
+      </div>
 
       {/* Bottom row — agent permissions transparency panel */}
       <AgentPermissions

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { api, showErrorToast, showSuccessToast } from "@/lib/api";
+import { DemoReliabilityControls } from "@/components/dashboard/DemoReliabilityControls";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -68,6 +69,8 @@ export default function SettingsPage() {
           Organization profile and scan configuration.
         </p>
       </div>
+
+      <DemoReliabilityControls />
 
       {/* Organization Profile */}
       <Card>

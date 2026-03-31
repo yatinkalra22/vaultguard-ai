@@ -58,6 +58,15 @@ const dataAccessedMap: Record<string, string[]> = {
   org_owner_review: ["GitHub org members", "Owner roles"],
 };
 
+const complianceMap: Record<string, string[]> = {
+  stale_user: ["NIST AC-2", "SOC2 CC6.2"],
+  deactivated_admin: ["NIST AC-2(3)", "ISO 27001 A.9"],
+  shadow_app: ["SOC2 CC6.6", "ISO 27001 A.8"],
+  outside_collaborator: ["NIST AC-6", "SOC2 CC7.2"],
+  broad_app: ["NIST AC-3", "ISO 27001 A.9.1"],
+  org_owner_review: ["SOC2 CC6.1", "ISO 27001 A.6.1"],
+};
+
 const statusColors: Record<string, string> = {
   open: "border-border text-foreground",
   pending_approval: "bg-[var(--risk-medium)]/20 text-[var(--risk-medium)] border-0",
@@ -130,6 +139,17 @@ export function FindingCard({ finding, onRemediate, onIgnore }: FindingCardProps
               <span className="font-medium">Data accessed:</span>{" "}
               {dataAccessedMap[finding.type].join(", ")}
             </span>
+          </div>
+        )}
+
+        {/* Compliance mapping */}
+        {complianceMap[finding.type] && (
+          <div className="flex flex-wrap items-center gap-1.5">
+            {complianceMap[finding.type].map((control) => (
+              <Badge key={control} variant="outline" className="text-[10px]">
+                {control}
+              </Badge>
+            ))}
           </div>
         )}
 
