@@ -9,6 +9,7 @@ import {
   ForbiddenException,
   BadRequestException,
 } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { StepUpGuard } from '../auth/step-up.guard';
@@ -167,7 +168,7 @@ export class RemediationController {
 
       if (eligibleFindingIds.length === 0) {
         return {
-          batchId: `batch-${Date.now()}`,
+          batchId: `batch-${randomUUID()}`,
           requested: uniqueFindingIds.length,
           skippedCount: skipped.length,
           skipped,
@@ -209,7 +210,7 @@ export class RemediationController {
       }
 
       return {
-        batchId: `batch-${Date.now()}`,
+        batchId: `batch-${randomUUID()}`,
         requested: uniqueFindingIds.length,
         skippedCount: skipped.length,
         skipped,
