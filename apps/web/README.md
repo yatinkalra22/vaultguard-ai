@@ -1,36 +1,44 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# VaultGuard Web
 
-## Getting Started
+Frontend for VaultGuard AI, built with Next.js App Router.
 
-First, run the development server:
+## Commands
+
+Run from the monorepo root.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm -C apps/web dev
+pnpm -C apps/web build
+pnpm -C apps/web lint
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Default local URL: http://localhost:3000
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Copy root env template values into:
 
-## Learn More
+- apps/web/.env.local
 
-To learn more about Next.js, take a look at the following resources:
+Required keys:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- AUTH0_SECRET
+- AUTH0_BASE_URL
+- AUTH0_ISSUER_BASE_URL
+- AUTH0_CLIENT_ID
+- AUTH0_CLIENT_SECRET
+- AUTH0_AUDIENCE
+- NEXT_PUBLIC_API_URL
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Key Routes
 
-## Deploy on Vercel
+- Dashboard: / 
+- Findings: /findings
+- Integrations: /integrations
+- Audit Log: /audit-log
+- Settings: /settings
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Notes
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- API requests are proxied through /api/proxy/* so access tokens stay server-side.
+- Auth is handled by @auth0/nextjs-auth0 middleware and route handlers.

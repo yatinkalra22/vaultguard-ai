@@ -160,10 +160,11 @@ export class RemediationService {
 
     if (!rem || rem.status !== 'pending') return rem;
 
-    const status = await this.ciba.pollForApproval(rem.ciba_auth_req_id);
+    const pollResult = await this.ciba.pollForApproval(rem.ciba_auth_req_id);
+    const status = pollResult.status;
 
     if (status === 'approved') {
-      await this.executeRemediation(rem);
+      await this.executeRemediation(rem, pollResult.approverSub);
     } else if (status === 'rejected') {
       await this.supabase.client
         .from('remediations')
@@ -186,7 +187,12 @@ export class RemediationService {
     return { ...rem, status };
   }
 
-  private async executeRemediation(rem: Record<string, any>) {
+  private async executeRemediation(
+    rem: Record<string, any>,
+    approverSub?: string,
+  ) {
+    const actor = approverSub ?? rem.requested_by;
+
     try {
       // Execute the actual action against Slack or GitHub API
       if (rem.action === 'revoke_slack_user') {
@@ -208,7 +214,7 @@ export class RemediationService {
         .from('remediations')
         .update({
           status: 'executed',
-          approved_by: rem.requested_by,
+          approved_by: actor,
           resolved_at: new Date().toISOString(),
         })
         .eq('id', rem.id);
@@ -221,7 +227,7 @@ export class RemediationService {
       // Audit trail
       await this.supabase.client.from('audit_logs').insert({
         org_id: rem.org_id,
-        actor: rem.requested_by,
+        actor,
         action: 'remediation.executed',
         target: rem.target_entity,
         metadata: { remediation_id: rem.id, action: rem.action },

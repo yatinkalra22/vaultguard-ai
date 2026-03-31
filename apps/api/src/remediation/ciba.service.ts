@@ -1,6 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
+export interface CibaPollResult {
+  status: 'approved' | 'rejected' | 'pending';
+  approverSub?: string;
+}
+
 /**
  * WHY: CIBA (Client Initiated Backchannel Authentication) is the "human-in-the-loop"
  * pattern for AI agents. Instead of acting autonomously or just alerting, CIBA
@@ -80,7 +85,7 @@ export class CibaService {
    */
   async pollForApproval(
     authReqId: string,
-  ): Promise<'approved' | 'rejected' | 'pending'> {
+  ): Promise<CibaPollResult> {
     const body = new URLSearchParams({
       client_id: this.clientId,
       client_secret: this.clientSecret,
@@ -97,20 +102,42 @@ export class CibaService {
 
       if (response.ok) {
         const data = await response.json();
-        return data.access_token ? 'approved' : 'pending';
+        if (!data.access_token) {
+          return { status: 'pending' };
+        }
+
+        return {
+          status: 'approved',
+          approverSub: this.extractSubFromJwt(data.access_token as string),
+        };
       }
 
       const err = await response.json().catch(() => ({ error: 'unknown' }));
 
-      if (err.error === 'authorization_pending') return 'pending';
-      if (err.error === 'access_denied') return 'rejected';
-      if (err.error === 'expired_token') return 'rejected';
+      if (err.error === 'authorization_pending') return { status: 'pending' };
+      if (err.error === 'access_denied') return { status: 'rejected' };
+      if (err.error === 'expired_token') return { status: 'rejected' };
 
       this.logger.warn(`CIBA poll unexpected error: ${err.error}`);
-      return 'pending';
+      return { status: 'pending' };
     } catch (err) {
       this.logger.error('CIBA poll failed:', err);
-      return 'pending';
+      return { status: 'pending' };
+    }
+  }
+
+  private extractSubFromJwt(token: string): string | undefined {
+    try {
+      const parts = token.split('.');
+      if (parts.length !== 3) return undefined;
+
+      const payload = JSON.parse(
+        Buffer.from(parts[1], 'base64url').toString('utf8'),
+      ) as { sub?: string };
+
+      return payload.sub;
+    } catch {
+      return undefined;
     }
   }
 }
