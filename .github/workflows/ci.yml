@@ -33,9 +33,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # WHY: API lint is tsc --noEmit (see apps/api/package.json).
-      # Catches type errors before they reach production.
-      - name: Type check API
+      # WHY: API lint runs both TypeScript typecheck and ESLint.
+      # Catches type and code quality issues before they reach production.
+      - name: Lint API
         run: pnpm --filter @vaultguard/api lint
 
       # WHY: Web lint runs ESLint with next config.

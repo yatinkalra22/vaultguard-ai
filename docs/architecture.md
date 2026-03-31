@@ -4,6 +4,11 @@
 
 VaultGuard AI is an AI-powered SaaS access governance agent. A security admin connects their Slack workspace and GitHub organization. VaultGuard's AI agent continuously scans both platforms, detects access anomalies (stale users, over-permissioned bots, shadow apps), and asks the admin for approval via CIBA before taking any remediation action.
 
+## Architecture Governance
+
+- Engineering and architecture standards: `docs/ARCHITECTURE_STANDARDS.md`
+- Architecture Decision Records (ADR): `docs/adr/`
+
 ## System Architecture
 
 ```
