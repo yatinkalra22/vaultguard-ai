@@ -27,18 +27,21 @@ export class ScanningController {
   @Throttle({ default: { ttl: 60_000, limit: 3 } })
   async triggerScan(
     @Request() req: { user: { sub: string; orgId?: string } },
+    @Query('githubOrg') githubOrg?: string,
   ) {
     const orgId = req.user.orgId;
     if (!orgId) {
       return { error: 'No organization associated with this user' };
     }
 
+    const resolvedGithubOrg = githubOrg ?? process.env.DEFAULT_GITHUB_ORG ?? '';
+
     // WHY: Run scan async — return immediately so the frontend can show
     // progress via SSE. The scan emits events as it progresses.
     const result = await this.scanningService.runScan(
       orgId,
       req.user.sub,
-      '', // GitHub org name — resolved from integrations table
+      resolvedGithubOrg,
     );
 
     return result;

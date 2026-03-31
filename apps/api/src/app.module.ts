@@ -16,6 +16,7 @@ import { FindingsModule } from './findings/findings.module';
 import { RemediationModule } from './remediation/remediation.module';
 import { AuditModule } from './audit/audit.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { IntegrationsModule } from './integrations/integrations.module';
 import { HealthController } from './health.controller';
 
 @Module({
@@ -62,6 +63,7 @@ import { HealthController } from './health.controller';
     FindingsModule,
     RemediationModule,
     DashboardModule,
+    IntegrationsModule,
   ],
   controllers: [HealthController, AuthController],
   providers: [

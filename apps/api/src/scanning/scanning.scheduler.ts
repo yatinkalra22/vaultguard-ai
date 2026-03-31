@@ -34,12 +34,14 @@ export class ScanningScheduler {
 
     for (const org of orgs) {
       try {
+        const githubOrg = process.env.DEFAULT_GITHUB_ORG ?? '';
+
         // WHY: Sequential per-org to avoid rate limiting on Slack/GitHub APIs.
         // Parallel scanning across orgs would hit API limits quickly.
         await this.scanningService.runScan(
           org.id,
           org.auth0_org_id,
-          '', // GitHub org name — will be stored on org record in a future phase
+          githubOrg,
         );
         this.logger.log(`Scheduled scan completed for org ${org.id}`);
       } catch (err) {

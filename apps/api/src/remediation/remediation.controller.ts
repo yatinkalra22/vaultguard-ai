@@ -70,7 +70,7 @@ export class RemediationController {
     // WHY: checkAndExecute both returns current status AND advances the state
     // machine if the admin has responded. This means the frontend can poll
     // this endpoint and see the status change in real time.
-    return this.remediationService.checkAndExecute(id);
+    return this.remediationService.checkAndExecute(id, orgId);
   }
 
   /** List all remediations for the current org. */

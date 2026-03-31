@@ -19,11 +19,12 @@ export class GithubScanner {
     members: GitHubMember[],
     collaborators: GitHubMember[],
     installations: GitHubInstallation[],
+    org: string,
   ): GitHubFinding[] {
     return [
-      ...this.detectOutsideCollaborators(collaborators),
-      ...this.detectBroadApps(installations),
-      ...this.detectOrgOwners(members),
+      ...this.detectOutsideCollaborators(collaborators, org),
+      ...this.detectBroadApps(installations, org),
+      ...this.detectOrgOwners(members, org),
     ];
   }
 
@@ -35,6 +36,7 @@ export class GithubScanner {
    */
   private detectOutsideCollaborators(
     collaborators: GitHubMember[],
+    org: string,
   ): GitHubFinding[] {
     return collaborators.map((c) => ({
       type: 'over_permissioned' as const,
@@ -44,6 +46,7 @@ export class GithubScanner {
       affectedEntity: {
         id: c.id,
         login: c.login,
+        org,
         url: c.html_url,
       },
     }));
@@ -57,6 +60,7 @@ export class GithubScanner {
    */
   private detectBroadApps(
     installations: GitHubInstallation[],
+    org: string,
   ): GitHubFinding[] {
     return installations
       .filter(
@@ -72,6 +76,7 @@ export class GithubScanner {
         affectedEntity: {
           id: i.id,
           app: i.app_slug,
+          org,
           permissions: i.permissions,
           installed_by: i.account?.login,
         },
@@ -84,7 +89,7 @@ export class GithubScanner {
    * manage billing, and bypass branch protections. Regular review is critical.
    * GitHub API doesn't expose last_active, so we flag all owners.
    */
-  private detectOrgOwners(members: GitHubMember[]): GitHubFinding[] {
+  private detectOrgOwners(members: GitHubMember[], org: string): GitHubFinding[] {
     return members
       .filter((m) => m.site_admin || m.role === 'admin')
       .slice(0, 5) // WHY: Limit to 5 to reduce noise — focus on review, not alert fatigue
@@ -96,6 +101,7 @@ export class GithubScanner {
         affectedEntity: {
           id: m.id,
           login: m.login,
+          org,
           url: m.html_url,
         },
       }));

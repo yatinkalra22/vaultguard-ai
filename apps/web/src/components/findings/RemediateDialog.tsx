@@ -10,9 +10,11 @@ import { api } from "@/lib/api";
 interface Finding {
   id: string;
   provider: string;
+  type: string;
   severity: string;
   title: string;
   ai_recommendation: string | null;
+  affected_entity: Record<string, unknown> | null;
 }
 
 interface RemediateDialogProps {
@@ -45,18 +47,20 @@ export function RemediateDialog({
     setError(null);
 
     try {
-      const actionMap: Record<string, string> = {
-        stale_user: "revoke_access",
-        deactivated_admin: "revoke_access",
-        shadow_app: "disable_app",
-        outside_collaborator: "revoke_access",
-        broad_app: "disable_app",
-        org_owner_review: "downgrade_role",
-      };
+      let action = "flag_app";
+      if (
+        finding.provider === "slack" &&
+        (finding.type === "stale_user" || finding.type === "deactivated_admin")
+      ) {
+        action = "revoke_slack_user";
+      } else if (finding.provider === "github" && finding.type === "over_permissioned") {
+        action = "remove_github_member";
+      }
 
       await api.post("remediations", {
         findingId: finding.id,
-        action: actionMap[finding.provider] ?? "revoke_access",
+        action,
+        targetEntity: finding.affected_entity ?? {},
       });
 
       onSuccess();

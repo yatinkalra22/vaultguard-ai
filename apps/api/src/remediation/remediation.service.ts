@@ -1,4 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { CibaService } from './ciba.service';
 import { SupabaseService } from '../common/supabase.service';
 import { SlackService } from '../slack/slack.service';
@@ -9,6 +14,25 @@ const ACTION_DESCRIPTIONS: Record<string, string> = {
   remove_github_member: 'Remove GitHub org member',
   flag_app: 'Flag app for review',
 };
+
+function resolveExpectedAction(
+  provider: string,
+  type: string,
+): string | null {
+  if (provider === 'slack' && (type === 'stale_user' || type === 'deactivated_admin')) {
+    return 'revoke_slack_user';
+  }
+
+  if (provider === 'github' && type === 'over_permissioned') {
+    return 'remove_github_member';
+  }
+
+  if (type === 'shadow_app') {
+    return 'flag_app';
+  }
+
+  return null;
+}
 
 @Injectable()
 export class RemediationService {
@@ -32,11 +56,41 @@ export class RemediationService {
     action: string;
     targetEntity: Record<string, unknown>;
   }) {
-    const actionDesc =
-      ACTION_DESCRIPTIONS[params.action] ?? params.action;
+    // WHY: Never trust client payload for finding ownership or target details.
+    // Resolve finding inside the org and derive canonical action/target server-side.
+    const { data: finding, error: findingError } = await this.supabase.client
+      .from('findings')
+      .select('id, org_id, provider, type, status, affected_entity')
+      .eq('id', params.findingId)
+      .eq('org_id', params.orgId)
+      .single();
+
+    if (findingError || !finding) {
+      throw new NotFoundException('Finding not found for this organization');
+    }
+
+    if (finding.status !== 'open') {
+      throw new BadRequestException('Only open findings can be remediated');
+    }
+
+    const expectedAction = resolveExpectedAction(finding.provider, finding.type);
+    if (!expectedAction) {
+      throw new BadRequestException('This finding type is not auto-remediable');
+    }
+
+    if (params.action && params.action !== expectedAction) {
+      throw new BadRequestException('Invalid action for this finding type');
+    }
+
+    const action = expectedAction;
+    const targetEntity =
+      (finding.affected_entity as Record<string, unknown> | null) ??
+      params.targetEntity ??
+      {};
+    const actionDesc = ACTION_DESCRIPTIONS[action] ?? action;
     const targetName =
-      (params.targetEntity.name as string) ??
-      (params.targetEntity.login as string) ??
+      (targetEntity.name as string) ??
+      (targetEntity.login as string) ??
       'unknown';
 
     // 1. Initiate CIBA — sends approval request to admin
@@ -53,8 +107,8 @@ export class RemediationService {
       .insert({
         finding_id: params.findingId,
         org_id: params.orgId,
-        action: params.action,
-        target_entity: params.targetEntity,
+        action,
+        target_entity: targetEntity,
         ciba_auth_req_id: authReqId,
         status: 'pending',
         requested_by: params.userSub,
@@ -74,7 +128,8 @@ export class RemediationService {
     await this.supabase.client
       .from('findings')
       .update({ status: 'pending_approval' })
-      .eq('id', params.findingId);
+      .eq('id', params.findingId)
+      .eq('org_id', params.orgId);
 
     // 4. Audit log
     await this.supabase.client.from('audit_logs').insert({
@@ -83,7 +138,7 @@ export class RemediationService {
       action: 'remediation.requested',
       target: {
         finding_id: params.findingId,
-        remediation_action: params.action,
+        remediation_action: action,
         target_entity: targetName,
       },
     });
@@ -95,11 +150,12 @@ export class RemediationService {
    * Check CIBA approval status and execute if approved.
    * Called by the polling endpoint or a background job.
    */
-  async checkAndExecute(remediationId: string) {
+  async checkAndExecute(remediationId: string, orgId: string) {
     const { data: rem } = await this.supabase.client
       .from('remediations')
       .select('*')
       .eq('id', remediationId)
+      .eq('org_id', orgId)
       .single();
 
     if (!rem || rem.status !== 'pending') return rem;
@@ -142,7 +198,7 @@ export class RemediationService {
       } else if (rem.action === 'remove_github_member') {
         await this.githubService.removeOrgMember(
           rem.requested_by,
-          rem.target_entity.org ?? '',
+          rem.target_entity.org ?? process.env.DEFAULT_GITHUB_ORG ?? '',
           rem.target_entity.login,
         );
       }

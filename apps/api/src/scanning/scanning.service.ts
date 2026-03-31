@@ -47,13 +47,25 @@ export class ScanningService {
       const results = await Promise.allSettled([
         this.slackService.listUsers(adminUserId),
         this.slackService.listInstalledApps(adminUserId),
-        this.githubService.listOrgMembers(adminUserId, githubOrg),
-        this.githubService.listOutsideCollaborators(adminUserId, githubOrg),
-        this.githubService.listOrgInstallations(adminUserId, githubOrg),
+        githubOrg
+          ? this.githubService.listOrgMembers(adminUserId, githubOrg)
+          : Promise.resolve([]),
+        githubOrg
+          ? this.githubService.listOutsideCollaborators(adminUserId, githubOrg)
+          : Promise.resolve([]),
+        githubOrg
+          ? this.githubService.listOrgInstallations(adminUserId, githubOrg)
+          : Promise.resolve([]),
       ]);
 
       const [slackUsers, slackApps, githubMembers, githubCollabs, githubApps] =
         results.map((r) => (r.status === 'fulfilled' ? r.value : []));
+
+      if (!githubOrg) {
+        this.logger.warn(
+          `Scan ${scan.id}: DEFAULT_GITHUB_ORG not configured, skipping GitHub scans`,
+        );
+      }
 
       // Log any partial failures
       results.forEach((r, i) => {
@@ -69,7 +81,12 @@ export class ScanningService {
           .analyze(slackUsers as any[], slackApps as any[])
           .map((f) => ({ ...f, provider: 'slack' as const })),
         ...this.githubScanner
-          .analyze(githubMembers as any[], githubCollabs as any[], githubApps as any[])
+          .analyze(
+            githubMembers as any[],
+            githubCollabs as any[],
+            githubApps as any[],
+            githubOrg,
+          )
           .map((f) => ({ ...f, provider: 'github' as const })),
       ];
 

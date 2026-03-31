@@ -13,6 +13,7 @@ interface Finding {
   title: string;
   description: string | null;
   ai_recommendation: string | null;
+  affected_entity: Record<string, unknown> | null;
   status: string;
   created_at: string;
 }

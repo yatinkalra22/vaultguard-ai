@@ -42,7 +42,7 @@ export class DashboardController {
   async getSummary(@Req() req: any) {
     // WHY: orgId comes from the JWT — users only see their own org's data.
     // Fallback to 'default' for local dev where org_id may not be in the token.
-    const orgId = req.user?.org_id ?? 'default';
+    const orgId = req.user?.orgId ?? req.user?.org_id ?? 'default';
     return this.dashboardService.getSummary(orgId);
   }
 
@@ -57,7 +57,7 @@ export class DashboardController {
   @SkipThrottle()
   @Sse('events')
   events(@Req() req: any): Observable<MessageEvent> {
-    const orgId = req.user?.org_id ?? 'default';
+    const orgId = req.user?.orgId ?? req.user?.org_id ?? 'default';
 
     return this.eventSubject.pipe(
       // WHY: Filter events by orgId so clients only receive their own org's events.
