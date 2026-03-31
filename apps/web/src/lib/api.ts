@@ -4,6 +4,32 @@
 
 const BASE = "/api/proxy";
 
+export const ERROR_CODES = {
+  UNAUTHORIZED: "unauthorized",
+  FORBIDDEN: "forbidden",
+  VALIDATION_FAILED: "validation_failed",
+  NOT_FOUND: "not_found",
+  RATE_LIMITED: "rate_limited",
+  STEP_UP_REQUIRED: "step_up_required",
+  STEP_UP_EXPIRED: "step_up_expired",
+  INTERNAL_ERROR: "internal_error",
+  BACKEND_UNAVAILABLE: "backend_unavailable",
+} as const;
+
+export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];
+
+const ERROR_CODE_MESSAGES: Record<ErrorCode, string> = {
+  [ERROR_CODES.UNAUTHORIZED]: "Your session has expired. Please sign in again.",
+  [ERROR_CODES.FORBIDDEN]: "You do not have permission to perform this action.",
+  [ERROR_CODES.VALIDATION_FAILED]: "Please check the entered details and try again.",
+  [ERROR_CODES.NOT_FOUND]: "We could not find what you requested.",
+  [ERROR_CODES.RATE_LIMITED]: "Too many requests. Please wait a moment and try again.",
+  [ERROR_CODES.STEP_UP_REQUIRED]: "Please verify your identity with MFA to continue.",
+  [ERROR_CODES.STEP_UP_EXPIRED]: "Your verification expired. Please complete MFA again.",
+  [ERROR_CODES.INTERNAL_ERROR]: "Something went wrong on our side. Please try again shortly.",
+  [ERROR_CODES.BACKEND_UNAVAILABLE]: "Service is temporarily unavailable. Please try again.",
+};
+
 type ErrorPayload = {
   statusCode?: number;
   message?: string | string[];
@@ -53,13 +79,9 @@ function pickTechnicalMessage(payload: unknown): string | undefined {
   return undefined;
 }
 
-function normalizeHumanMessage(status: number, code?: string): string {
-  if (code === "step_up_required") {
-    return "Please verify your identity with MFA to continue.";
-  }
-
-  if (code === "step_up_expired") {
-    return "Your verification expired. Please complete MFA again.";
+export function normalizeHumanMessage(status: number, code?: string): string {
+  if (code && code in ERROR_CODE_MESSAGES) {
+    return ERROR_CODE_MESSAGES[code as ErrorCode];
   }
 
   if (status === 400) {
@@ -83,7 +105,7 @@ function normalizeHumanMessage(status: number, code?: string): string {
   }
 
   if (status >= 500) {
-    return "Something went wrong on our side. Please try again shortly.";
+    return ERROR_CODE_MESSAGES[ERROR_CODES.INTERNAL_ERROR];
   }
 
   return "Request failed. Please try again.";
@@ -103,7 +125,10 @@ export function getErrorMessage(error: unknown, fallback = "Something went wrong
 
 export function isStepUpRequiredError(error: unknown): boolean {
   if (!(error instanceof ApiError)) return false;
-  return error.code === "step_up_required" || error.code === "step_up_expired";
+  return (
+    error.code === ERROR_CODES.STEP_UP_REQUIRED ||
+    error.code === ERROR_CODES.STEP_UP_EXPIRED
+  );
 }
 
 async function parseErrorBody(res: Response): Promise<unknown> {

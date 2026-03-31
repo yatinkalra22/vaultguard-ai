@@ -7,6 +7,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
+import { defaultCodeForStatus } from './error-codes';
 
 /**
  * WHY: Global exception filter prevents internal error details from leaking
@@ -41,8 +42,22 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
       response.status(status).json(
         typeof exceptionResponse === 'string'
-          ? { statusCode: status, message: exceptionResponse, requestId }
-          : { ...exceptionResponse, requestId },
+          ? {
+              statusCode: status,
+              code: defaultCodeForStatus(status),
+              message: exceptionResponse,
+              requestId,
+            }
+          : {
+              code:
+                (exceptionResponse as { code?: unknown }).code &&
+                typeof (exceptionResponse as { code?: unknown }).code ===
+                  'string'
+                  ? (exceptionResponse as { code: string }).code
+                  : defaultCodeForStatus(status),
+              ...exceptionResponse,
+              requestId,
+            },
       );
       return;
     }
@@ -56,6 +71,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
     response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
       statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+      code: defaultCodeForStatus(HttpStatus.INTERNAL_SERVER_ERROR),
       message: 'An internal error occurred. Please try again later.',
       requestId,
     });

@@ -15,6 +15,7 @@ import { FgaGuard } from '../auth/fga.guard';
 import { CreateRemediationDto } from './dto/create-remediation.dto';
 import { RemediationService } from './remediation.service';
 import { SupabaseService } from '../common/supabase.service';
+import { ERROR_CODES } from '../common/error-codes';
 
 @Controller('remediations')
 @UseGuards(JwtAuthGuard)
@@ -47,7 +48,10 @@ export class RemediationController {
   ) {
     const orgId = req.user.orgId;
     if (!orgId) {
-      throw new ForbiddenException('No organization associated with this user');
+      throw new ForbiddenException({
+        code: ERROR_CODES.FORBIDDEN,
+        message: 'No organization associated with this user',
+      });
     }
 
     return this.remediationService.requestRemediation({

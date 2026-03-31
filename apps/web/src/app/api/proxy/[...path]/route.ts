@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth0 } from "@/lib/auth0";
+import { ERROR_CODES } from "@/lib/api";
 
 // WHY: Proxy layer between frontend and NestJS backend. This pattern:
 // 1. Keeps the Auth0 access token server-side (never exposed to the browser)
@@ -42,7 +43,7 @@ async function proxy(
     return NextResponse.json(
       {
         statusCode: 401,
-        code: "unauthorized",
+        code: ERROR_CODES.UNAUTHORIZED,
         message: "Please sign in to continue.",
       },
       { status: 401 }
@@ -120,7 +121,7 @@ async function proxy(
     return NextResponse.json(
       {
         statusCode: 502,
-        code: "backend_unavailable",
+        code: ERROR_CODES.BACKEND_UNAVAILABLE,
         message: "Service is temporarily unavailable. Please try again.",
       },
       { status: 502 }
