@@ -126,4 +126,34 @@ export class SlackService {
       throw new Error('Failed to deactivate Slack user');
     }
   }
+
+  /**
+   * Send an alert message to a Slack channel.
+   * WHY: Alert delivery completes the loop detect -> decide -> notify.
+   */
+  async sendAlertMessage(
+    adminUserId: string,
+    channel: string,
+    text: string,
+  ): Promise<boolean> {
+    try {
+      const token = await this.tokenVault.getTokenForUser(adminUserId, 'slack');
+      const { data } = await axios.post<{ ok: boolean; error?: string }>(
+        `${this.SLACK_API}/chat.postMessage`,
+        { channel, text },
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+
+      if (!data.ok) {
+        this.logger.warn(`Slack alert message failed: ${data.error}`);
+        return false;
+      }
+
+      return true;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'unknown_error';
+      this.logger.warn(`Slack alert delivery skipped: ${message}`);
+      return false;
+    }
+  }
 }

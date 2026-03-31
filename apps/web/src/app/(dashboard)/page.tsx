@@ -9,6 +9,7 @@ import { LiveScanFeed } from "@/components/dashboard/LiveScanFeed";
 import { TriggerScanButton } from "@/components/dashboard/TriggerScanButton";
 import { AgentPermissions } from "@/components/dashboard/AgentPermissions";
 import { DashboardMetricsDisplay } from "@/components/dashboard/MetricsDisplay";
+import { AlertHistoryPanel } from "@/components/dashboard/AlertHistoryPanel";
 import { FindingsChart } from "@/components/findings/FindingsChart";
 import { useMetrics } from "@/hooks/useMetrics";
 
@@ -53,12 +54,17 @@ export default function OverviewPage() {
           shouldTriggerScan: boolean;
           reason: string;
           settings?: { scanCooldownMinutes: number };
+          incident?: { id: string };
         }>("alerts/evaluate", {
           currentRiskScore: data.riskScore,
           criticalFindings: data.severityCounts.critical,
         });
 
         if (!evaluation.shouldTriggerScan) return;
+
+        if (evaluation.incident) {
+          window.dispatchEvent(new CustomEvent("custom:alertSettingsUpdated"));
+        }
 
         const cooldownMinutes = evaluation.settings?.scanCooldownMinutes ?? 30;
         const lastTriggeredAt = Number(
@@ -152,6 +158,9 @@ export default function OverviewPage() {
         <RecentScans scans={data?.recentScans ?? []} loading={loading} />
         <LiveScanFeed />
       </div>
+
+      {/* Alert history */}
+      <AlertHistoryPanel />
 
       {/* Bottom row — agent permissions transparency panel */}
       <AgentPermissions

@@ -13,6 +13,7 @@ type AlertSettings = {
   criticalFindingsThreshold: number;
   scanCooldownMinutes: number;
   slackAlertsEnabled: boolean;
+  alertChannel: string;
 };
 
 /**
@@ -29,6 +30,7 @@ export default function SettingsPage() {
     criticalFindingsThreshold: 10,
     scanCooldownMinutes: 30,
     slackAlertsEnabled: false,
+    alertChannel: "#general",
   });
   const [saving, setSaving] = useState(false);
   const [loadingAlerts, setLoadingAlerts] = useState(true);
@@ -197,24 +199,41 @@ export default function SettingsPage() {
                   />
                 </div>
 
-                <div className="flex items-center justify-between rounded-md border p-3 self-end">
-                  <div>
-                    <p className="text-sm font-medium">Slack Alert Notifications</p>
-                    <p className="text-xs text-muted-foreground">
-                      Send threshold alerts to your connected Slack workspace.
-                    </p>
-                  </div>
+                <div className="space-y-2">
+                  <label className="text-xs text-muted-foreground">
+                    Slack Alert Channel
+                  </label>
                   <input
-                    type="checkbox"
-                    checked={alerts.slackAlertsEnabled}
+                    type="text"
+                    value={alerts.alertChannel}
                     onChange={(e) =>
                       setAlerts((prev) => ({
                         ...prev,
-                        slackAlertsEnabled: e.target.checked,
+                        alertChannel: e.target.value,
                       }))
                     }
-                    className="h-4 w-4"
+                    placeholder="#general"
+                    className="w-full rounded-md border px-3 py-2 text-sm"
                   />
+                  <div className="flex items-center justify-between rounded-md border p-3">
+                    <div>
+                      <p className="text-sm font-medium">Slack Alert Notifications</p>
+                      <p className="text-xs text-muted-foreground">
+                        Send threshold alerts to your connected Slack workspace.
+                      </p>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={alerts.slackAlertsEnabled}
+                      onChange={(e) =>
+                        setAlerts((prev) => ({
+                          ...prev,
+                          slackAlertsEnabled: e.target.checked,
+                        }))
+                      }
+                      className="h-4 w-4"
+                    />
+                  </div>
                 </div>
               </div>
 

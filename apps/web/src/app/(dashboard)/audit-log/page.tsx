@@ -47,6 +47,9 @@ const actionLabels: Record<string, string> = {
   "finding.ignored": "Finding Ignored",
   "integration.connected": "Integration Connected",
   "integration.disconnected": "Integration Disconnected",
+  "alert.triggered": "Alert Triggered",
+  "alert.deduplicated": "Alert Deduplicated",
+  "alert.acknowledged": "Alert Acknowledged",
 };
 
 const actionColors: Record<string, string> = {
@@ -56,6 +59,9 @@ const actionColors: Record<string, string> = {
   "remediation.rejected": "bg-[var(--risk-high)]/20 text-[var(--risk-high)] border-0",
   "remediation.executed": "bg-[var(--risk-low)]/20 text-[var(--risk-low)] border-0",
   "remediation.failed": "bg-[var(--risk-critical)]/20 text-[var(--risk-critical)] border-0",
+  "alert.triggered": "bg-[var(--risk-high)]/20 text-[var(--risk-high)] border-0",
+  "alert.deduplicated": "bg-[var(--risk-medium)]/20 text-[var(--risk-medium)] border-0",
+  "alert.acknowledged": "bg-[var(--risk-low)]/20 text-[var(--risk-low)] border-0",
 };
 
 const selectClass =
@@ -149,6 +155,9 @@ export default function AuditLogPage() {
           <option value="remediation.rejected">Remediation Rejected</option>
           <option value="remediation.executed">Remediation Executed</option>
           <option value="finding.ignored">Finding Ignored</option>
+          <option value="alert.triggered">Alert Triggered</option>
+          <option value="alert.deduplicated">Alert Deduplicated</option>
+          <option value="alert.acknowledged">Alert Acknowledged</option>
         </select>
       </div>
 
