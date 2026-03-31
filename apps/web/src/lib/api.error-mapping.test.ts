@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ERROR_CODES, normalizeHumanMessage } from "./api";
+import { ApiError, ERROR_CODES, isRetryableError, normalizeHumanMessage } from "./api";
 
 describe("normalizeHumanMessage", () => {
   it("maps step-up codes to friendly MFA message", () => {
@@ -36,5 +36,29 @@ describe("normalizeHumanMessage", () => {
     expect(normalizeHumanMessage(500, ERROR_CODES.BACKEND_UNAVAILABLE)).toBe(
       "Service is temporarily unavailable. Please try again."
     );
+  });
+});
+
+describe("isRetryableError", () => {
+  it("returns true for transient upstream api errors", () => {
+    const err = new ApiError({
+      status: 503,
+      userMessage: "Service unavailable",
+      code: ERROR_CODES.BACKEND_UNAVAILABLE,
+    });
+    expect(isRetryableError(err)).toBe(true);
+  });
+
+  it("returns false for authorization errors", () => {
+    const err = new ApiError({
+      status: 403,
+      userMessage: "Forbidden",
+      code: ERROR_CODES.FORBIDDEN,
+    });
+    expect(isRetryableError(err)).toBe(false);
+  });
+
+  it("returns true for network-level TypeError", () => {
+    expect(isRetryableError(new TypeError("Network error"))).toBe(true);
   });
 });

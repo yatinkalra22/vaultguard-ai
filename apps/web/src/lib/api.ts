@@ -60,6 +60,10 @@ export class ApiError extends Error {
   }
 }
 
+const RETRYABLE_STATUS_CODES = new Set([502, 503, 504]);
+const MAX_RETRIES = 2;
+const BASE_RETRY_DELAY_MS = 250;
+
 function pickTechnicalMessage(payload: unknown): string | undefined {
   if (!payload || typeof payload !== "object") return undefined;
   const body = payload as ErrorPayload;
@@ -131,6 +135,44 @@ export function isStepUpRequiredError(error: unknown): boolean {
   );
 }
 
+export function isRetryableError(error: unknown): boolean {
+  if (error instanceof ApiError) {
+    return RETRYABLE_STATUS_CODES.has(error.status);
+  }
+
+  // Network-level fetch failures are usually TypeError in browsers.
+  return error instanceof TypeError;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+function retryDelayMs(attempt: number): number {
+  return BASE_RETRY_DELAY_MS * 2 ** (attempt - 1);
+}
+
+async function requestWithRetry<T>(request: () => Promise<Response>): Promise<T> {
+  let attempt = 0;
+
+  while (true) {
+    try {
+      const res = await request();
+      return await handleResponse<T>(res);
+    } catch (error) {
+      attempt += 1;
+
+      if (!isRetryableError(error) || attempt > MAX_RETRIES) {
+        throw error;
+      }
+
+      await sleep(retryDelayMs(attempt));
+    }
+  }
+}
+
 async function parseErrorBody(res: Response): Promise<unknown> {
   const contentType = res.headers.get("content-type") ?? "";
   if (contentType.includes("application/json")) {
@@ -168,30 +210,30 @@ async function handleResponse<T>(res: Response): Promise<T> {
 export const api = {
   async get<T>(path: string, params?: Record<string, string>): Promise<T> {
     const query = params ? `?${new URLSearchParams(params)}` : "";
-    const res = await fetch(`${BASE}/${path}${query}`);
-    return handleResponse<T>(res);
+    return requestWithRetry<T>(() => fetch(`${BASE}/${path}${query}`));
   },
 
   async post<T>(path: string, body?: unknown): Promise<T> {
-    const res = await fetch(`${BASE}/${path}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: body ? JSON.stringify(body) : undefined,
-    });
-    return handleResponse<T>(res);
+    return requestWithRetry<T>(() =>
+      fetch(`${BASE}/${path}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: body ? JSON.stringify(body) : undefined,
+      })
+    );
   },
 
   async patch<T>(path: string, body?: unknown): Promise<T> {
-    const res = await fetch(`${BASE}/${path}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: body ? JSON.stringify(body) : undefined,
-    });
-    return handleResponse<T>(res);
+    return requestWithRetry<T>(() =>
+      fetch(`${BASE}/${path}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: body ? JSON.stringify(body) : undefined,
+      })
+    );
   },
 
   async del<T>(path: string): Promise<T> {
-    const res = await fetch(`${BASE}/${path}`, { method: "DELETE" });
-    return handleResponse<T>(res);
+    return requestWithRetry<T>(() => fetch(`${BASE}/${path}`, { method: "DELETE" }));
   },
 };
