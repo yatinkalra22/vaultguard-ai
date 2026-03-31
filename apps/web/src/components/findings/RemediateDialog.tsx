@@ -7,19 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, ShieldAlert, ShieldCheck, X } from "lucide-react";
 import { api, isStepUpRequiredError, showErrorToast, showSuccessToast } from "@/lib/api";
 import { triggerMetricsRefresh } from "@/hooks/useMetrics";
-
-interface Finding {
-  id: string;
-  provider: string;
-  type: string;
-  severity: string;
-  title: string;
-  ai_recommendation: string | null;
-  affected_entity: Record<string, unknown> | null;
-}
+import type { FindingItem, RemediationAction } from "@/types/domain";
 
 interface RemediateDialogProps {
-  finding: Finding;
+  finding: FindingItem;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -46,7 +37,7 @@ export function RemediateDialog({
     setLoading(true);
 
     try {
-      let action = "flag_app";
+      let action: RemediationAction = "flag_app";
       if (
         finding.provider === "slack" &&
         (finding.type === "stale_user" || finding.type === "deactivated_admin")

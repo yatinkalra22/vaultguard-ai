@@ -4,15 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Clock } from "lucide-react";
-
-interface ScanItem {
-  id: string;
-  provider: string;
-  status: string;
-  findingsCount: number;
-  startedAt: string;
-  completedAt: string | null;
-}
+import type { ScanItem, ScanStatus } from "@/types/domain";
 
 interface RecentScansProps {
   scans: ScanItem[];
@@ -34,7 +26,7 @@ function formatTime(iso: string): string {
   return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
-function statusIcon(status: string) {
+function statusIcon(status: ScanStatus) {
   switch (status) {
     case "completed":
       return <span className="text-[var(--risk-low)]">&#10003;</span>;

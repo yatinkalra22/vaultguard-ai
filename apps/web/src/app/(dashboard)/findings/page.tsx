@@ -6,27 +6,15 @@ import { FindingCard } from "@/components/findings/FindingCard";
 import { FindingFilters } from "@/components/findings/FindingFilters";
 import { RemediateDialog } from "@/components/findings/RemediateDialog";
 import { Skeleton } from "@/components/ui/skeleton";
-
-interface Finding {
-  id: string;
-  provider: string;
-  severity: string;
-  type: string;
-  title: string;
-  description: string | null;
-  ai_recommendation: string | null;
-  affected_entity: Record<string, unknown> | null;
-  status: string;
-  created_at: string;
-}
+import type { FindingItem, FindingSeverity, FindingStatus, Provider } from "@/types/domain";
 
 export default function FindingsPage() {
-  const [findings, setFindings] = useState<Finding[]>([]);
+  const [findings, setFindings] = useState<FindingItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [severity, setSeverity] = useState("");
-  const [provider, setProvider] = useState("");
-  const [status, setStatus] = useState("");
-  const [remediating, setRemediating] = useState<Finding | null>(null);
+  const [severity, setSeverity] = useState<"" | FindingSeverity>("");
+  const [provider, setProvider] = useState<"" | Provider>("");
+  const [status, setStatus] = useState<"" | FindingStatus>("");
+  const [remediating, setRemediating] = useState<FindingItem | null>(null);
 
   const fetchFindings = useCallback(async () => {
     setLoading(true);
@@ -35,7 +23,7 @@ export default function FindingsPage() {
       if (severity) params.severity = severity;
       if (provider) params.provider = provider;
       if (status) params.status = status;
-      const data = await api.get<Finding[]>("findings", params);
+      const data = await api.get<FindingItem[]>("findings", params);
       setFindings(data);
     } catch {
       setFindings([]);

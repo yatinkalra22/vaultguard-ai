@@ -3,12 +3,13 @@
 import { useState } from 'react';
 import { Zap, AlertCircle } from 'lucide-react';
 import { RemediationApprovalDialog } from './RemediationApprovalDialog';
+import type { FindingSeverity } from '@/types/domain';
 
 interface RemediationBulkActionsProps {
   findings: Array<{
     id: string;
     title: string;
-    severity: string;
+    severity: FindingSeverity;
     category: string;
   }>;
   onRemediateBatch: (findingIds: string[]) => void;

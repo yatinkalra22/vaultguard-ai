@@ -1,5 +1,7 @@
 "use client";
 
+import type { FindingSeverity, FindingStatus, Provider } from "@/types/domain";
+
 /**
  * WHY: Filter bar lets admins triage by severity/status/provider.
  * Uses native <select> styled to match our dark theme — no external
@@ -8,13 +10,25 @@
  */
 
 interface FindingFiltersProps {
-  severity: string;
-  provider: string;
-  status: string;
-  onSeverityChange: (v: string) => void;
-  onProviderChange: (v: string) => void;
-  onStatusChange: (v: string) => void;
+  severity: "" | FindingSeverity;
+  provider: "" | Provider;
+  status: "" | FindingStatus;
+  onSeverityChange: (v: "" | FindingSeverity) => void;
+  onProviderChange: (v: "" | Provider) => void;
+  onStatusChange: (v: "" | FindingStatus) => void;
 }
+
+const isSeverity = (value: string): value is FindingSeverity =>
+  value === "critical" || value === "high" || value === "medium" || value === "low";
+
+const isProvider = (value: string): value is Provider =>
+  value === "slack" || value === "github";
+
+const isStatus = (value: string): value is FindingStatus =>
+  value === "open" ||
+  value === "pending_approval" ||
+  value === "remediated" ||
+  value === "ignored";
 
 const selectClass =
   "h-9 rounded-md border border-border bg-card text-sm text-foreground px-3 py-1 focus:outline-none focus:ring-1 focus:ring-primary";
@@ -32,7 +46,10 @@ export function FindingFilters({
       <select
         className={selectClass}
         value={severity}
-        onChange={(e) => onSeverityChange(e.target.value)}
+        onChange={(e) => {
+          const value = e.target.value;
+          onSeverityChange(value === "" || isSeverity(value) ? value : "");
+        }}
         aria-label="Filter by severity"
       >
         <option value="">All Severity</option>
@@ -45,7 +62,10 @@ export function FindingFilters({
       <select
         className={selectClass}
         value={provider}
-        onChange={(e) => onProviderChange(e.target.value)}
+        onChange={(e) => {
+          const value = e.target.value;
+          onProviderChange(value === "" || isProvider(value) ? value : "");
+        }}
         aria-label="Filter by provider"
       >
         <option value="">All Providers</option>
@@ -56,7 +76,10 @@ export function FindingFilters({
       <select
         className={selectClass}
         value={status}
-        onChange={(e) => onStatusChange(e.target.value)}
+        onChange={(e) => {
+          const value = e.target.value;
+          onStatusChange(value === "" || isStatus(value) ? value : "");
+        }}
         aria-label="Filter by status"
       >
         <option value="">All Status</option>

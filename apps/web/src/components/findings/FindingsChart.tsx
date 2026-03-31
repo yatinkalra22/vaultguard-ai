@@ -19,6 +19,7 @@ import {
 import { AlertTriangle, TrendingUp } from 'lucide-react';
 import { RemediationBulkActions } from './RemediationBulkActions';
 import { api, showErrorToast } from '@/lib/api';
+import type { FindingSeverity, FindingType } from '@/types/domain';
 
 interface FindingsAnalytics {
   severityBreakdown: {
@@ -38,7 +39,7 @@ interface FindingsAnalytics {
   topRisks: Array<{
     id: string;
     title: string;
-    severity: string;
+    severity: FindingSeverity;
     affectedResources: number;
     lastSeen: string;
   }>;
@@ -48,8 +49,8 @@ interface FindingsAnalytics {
 interface Finding {
   id: string;
   title: string;
-  severity: string;
-  type?: string;
+  severity: FindingSeverity;
+  type?: FindingType;
 }
 
 const SEVERITY_COLORS = {

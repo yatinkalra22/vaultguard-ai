@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { api } from "@/lib/api";
 import { IntegrationCard } from "@/components/integrations/IntegrationCard";
 import { Skeleton } from "@/components/ui/skeleton";
+import type { IntegrationItem } from "@/types/domain";
 
 /**
  * WHY: Token Vault architecture means OAuth tokens are stored by Auth0,
@@ -12,21 +13,13 @@ import { Skeleton } from "@/components/ui/skeleton";
  * Ref: 01-architecture.md — "Slack refresh token stored in Auth0 Token Vault (never touches our DB)"
  */
 
-interface Integration {
-  id: string;
-  provider: string;
-  status: string;
-  connected_at: string | null;
-  last_scan_at: string | null;
-}
-
 export default function IntegrationsPage() {
-  const [integrations, setIntegrations] = useState<Integration[]>([]);
+  const [integrations, setIntegrations] = useState<IntegrationItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchIntegrations = useCallback(async () => {
     try {
-      const data = await api.get<Integration[]>("integrations");
+      const data = await api.get<IntegrationItem[]>("integrations");
       setIntegrations(data);
     } catch {
       setIntegrations([]);

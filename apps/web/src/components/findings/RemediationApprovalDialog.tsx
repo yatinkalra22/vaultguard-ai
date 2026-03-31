@@ -4,12 +4,13 @@ import { useState } from 'react';
 import { api } from '@/lib/api';
 import { CheckCircle2, AlertTriangle, Loader } from 'lucide-react';
 import { showSuccessToast, showErrorToast, showWarningToast } from '@/lib/api';
+import type { FindingSeverity } from '@/types/domain';
 
 interface ApprovalDialogProps {
   findings: Array<{
     id: string;
     title: string;
-    severity: string;
+    severity: FindingSeverity;
     category: string;
   }>;
   onClose: () => void;
@@ -88,7 +89,7 @@ export function RemediationApprovalDialog({
     }
   };
 
-  const severityColor = (severity: string) => {
+  const severityColor = (severity: FindingSeverity) => {
     switch (severity) {
       case 'critical':
         return 'bg-red-100 text-red-800 border-red-300';

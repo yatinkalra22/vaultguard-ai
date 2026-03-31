@@ -13,6 +13,7 @@ import { AlertHistoryPanel } from "@/components/dashboard/AlertHistoryPanel";
 import { IncidentTimelinePanel } from "@/components/dashboard/IncidentTimelinePanel";
 import { FindingsChart } from "@/components/findings/FindingsChart";
 import { useMetrics } from "@/hooks/useMetrics";
+import type { AlertReason, ScanItem } from "@/types/domain";
 
 /**
  * WHY: Client component because it fetches data and re-renders on scan events.
@@ -31,14 +32,7 @@ interface DashboardSummary {
   };
   connectedIntegrations: number;
   scansToday: number;
-  recentScans: Array<{
-    id: string;
-    provider: string;
-    status: string;
-    findingsCount: number;
-    startedAt: string;
-    completedAt: string | null;
-  }>;
+  recentScans: ScanItem[];
 }
 
 export default function OverviewPage() {
@@ -53,7 +47,7 @@ export default function OverviewPage() {
       try {
         const evaluation = await api.post<{
           shouldTriggerScan: boolean;
-          reason: string;
+          reason: AlertReason;
           settings?: { scanCooldownMinutes: number };
           incident?: { id: string };
         }>("alerts/evaluate", {
@@ -84,7 +78,7 @@ export default function OverviewPage() {
           "Auto-scan triggered from alert threshold",
           evaluation.reason
         );
-      } catch (err) {
+      } catch (err: unknown) {
         showErrorToast(err, "evaluate_alert_thresholds");
       }
     };

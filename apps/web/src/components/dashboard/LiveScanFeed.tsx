@@ -15,6 +15,16 @@ interface ScanEvent {
   timestamp: string;
 }
 
+function isScanEvent(value: unknown): value is ScanEvent {
+  if (typeof value !== "object" || value === null) return false;
+  const event = value as Record<string, unknown>;
+  const validType =
+    event.type === "scan.started" ||
+    event.type === "scan.completed" ||
+    event.type === "scan.failed";
+  return validType && typeof event.scanId === "string" && typeof event.timestamp === "string";
+}
+
 /**
  * WHY: SSE-powered live feed shows scan progress in real-time.
  * This is the "wow" moment in the demo — judges see events appear live.
@@ -36,8 +46,9 @@ export function LiveScanFeed() {
     // by the `type` field in the SSE message, not the generic `message` event.
     const handleEvent = (e: MessageEvent) => {
       try {
-        const data: ScanEvent = JSON.parse(e.data);
-        setEvents((prev) => [data, ...prev].slice(0, 20));
+        const parsed: unknown = JSON.parse(e.data);
+        if (!isScanEvent(parsed)) return;
+        setEvents((prev) => [parsed, ...prev].slice(0, 20));
       } catch {
         // Silently ignore malformed events
       }

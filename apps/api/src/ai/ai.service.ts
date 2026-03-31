@@ -42,6 +42,35 @@ export class AiService {
       };
     }
 
+    function isRecommendation(
+      value: unknown,
+    ): value is AIAnalysis['recommendations'][number] {
+      if (typeof value !== 'object' || value === null) return false;
+      const recommendation = value as Record<string, unknown>;
+      const validPriority =
+        recommendation.priority === 'immediate' ||
+        recommendation.priority === 'soon' ||
+        recommendation.priority === 'monitor';
+
+      return (
+        typeof recommendation.findingId === 'string' &&
+        validPriority &&
+        typeof recommendation.action === 'string' &&
+        typeof recommendation.rationale === 'string'
+      );
+    }
+
+    function isAIAnalysis(value: unknown): value is AIAnalysis {
+      if (typeof value !== 'object' || value === null) return false;
+      const analysis = value as Record<string, unknown>;
+      return (
+        typeof analysis.riskScore === 'number' &&
+        typeof analysis.summary === 'string' &&
+        Array.isArray(analysis.recommendations) &&
+        analysis.recommendations.every((rec) => isRecommendation(rec))
+      );
+    }
+
     const prompt = `You are a security analyst reviewing access governance findings for a company's SaaS tools (Slack and GitHub).
 
 Here are the raw findings from scanning:
@@ -80,13 +109,20 @@ Rules:
         messages: [{ role: 'user', content: prompt }],
       });
 
+      const firstContentBlock = response.content[0];
       const text =
-        response.content[0].type === 'text' ? response.content[0].text : '';
+        firstContentBlock && firstContentBlock.type === 'text'
+          ? firstContentBlock.text
+          : '';
 
       // WHY: Strip markdown fences — Claude sometimes wraps JSON in ```json blocks
       // despite being told not to. This is a known behavior.
       const cleaned = text.replace(/```json\s*|```\s*/g, '').trim();
-      return JSON.parse(cleaned) as AIAnalysis;
+      const parsed: unknown = JSON.parse(cleaned);
+      if (!isAIAnalysis(parsed)) {
+        throw new Error('AI response did not match expected analysis schema');
+      }
+      return parsed;
     } catch (err) {
       this.logger.error('AI analysis failed:', err);
 

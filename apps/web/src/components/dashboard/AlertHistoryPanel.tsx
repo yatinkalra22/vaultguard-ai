@@ -6,10 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Bell, CheckCircle2 } from "lucide-react";
+import type { AlertReason } from "@/types/domain";
 
 type AlertIncident = {
   id: string;
-  reason: string;
+  reason: AlertReason;
   status: "open" | "acknowledged";
   currentRiskScore: number;
   criticalFindings: number;
@@ -20,7 +21,7 @@ type AlertIncident = {
   acknowledgedBy?: string;
 };
 
-function formatReason(reason: string): string {
+function formatReason(reason: AlertReason): string {
   if (reason === "risk_threshold_exceeded") return "Risk Threshold Exceeded";
   if (reason === "critical_findings_threshold_exceeded") {
     return "Critical Findings Threshold Exceeded";

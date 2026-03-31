@@ -6,6 +6,50 @@ export interface CibaPollResult {
   approverSub?: string;
 }
 
+type Auth0ErrorPayload = {
+  error: string;
+  error_description?: string;
+};
+
+type CibaAuthorizeResponse = {
+  auth_req_id: string;
+};
+
+type CibaTokenResponse = {
+  access_token?: string;
+};
+
+function asAuth0ErrorPayload(value: unknown): Auth0ErrorPayload {
+  if (typeof value !== 'object' || value === null) {
+    return { error: 'unknown' };
+  }
+  const payload = value as Record<string, unknown>;
+  return {
+    error: typeof payload.error === 'string' ? payload.error : 'unknown',
+    error_description:
+      typeof payload.error_description === 'string'
+        ? payload.error_description
+        : undefined,
+  };
+}
+
+function asCibaAuthorizeResponse(value: unknown): CibaAuthorizeResponse | null {
+  if (typeof value !== 'object' || value === null) return null;
+  const payload = value as Record<string, unknown>;
+  return typeof payload.auth_req_id === 'string'
+    ? { auth_req_id: payload.auth_req_id }
+    : null;
+}
+
+function asCibaTokenResponse(value: unknown): CibaTokenResponse {
+  if (typeof value !== 'object' || value === null) return {};
+  const payload = value as Record<string, unknown>;
+  return {
+    access_token:
+      typeof payload.access_token === 'string' ? payload.access_token : undefined,
+  };
+}
+
 /**
  * WHY: CIBA (Client Initiated Backchannel Authentication) is the "human-in-the-loop"
  * pattern for AI agents. Instead of acting autonomously or just alerting, CIBA
@@ -61,17 +105,23 @@ export class CibaService {
     });
 
     if (!response.ok) {
-      const err = await response.json().catch(() => ({
-        error: 'unknown',
-        error_description: response.statusText,
-      }));
+      const err = asAuth0ErrorPayload(
+        await response.json().catch(() => ({
+          error: 'unknown',
+          error_description: response.statusText,
+        })),
+      );
       this.logger.error(`CIBA initiation failed: ${err.error_description}`);
       throw new Error(`CIBA request failed: ${err.error_description}`);
     }
 
-    const data = await response.json();
+    const data = asCibaAuthorizeResponse(await response.json());
+    if (!data) {
+      throw new Error('CIBA initiation response missing auth_req_id');
+    }
+
     this.logger.log(`CIBA request initiated: ${data.auth_req_id}`);
-    return data.auth_req_id as string;
+    return data.auth_req_id;
   }
 
   /**
@@ -101,18 +151,20 @@ export class CibaService {
       });
 
       if (response.ok) {
-        const data = await response.json();
+        const data = asCibaTokenResponse(await response.json());
         if (!data.access_token) {
           return { status: 'pending' };
         }
 
         return {
           status: 'approved',
-          approverSub: this.extractSubFromJwt(data.access_token as string),
+          approverSub: this.extractSubFromJwt(data.access_token),
         };
       }
 
-      const err = await response.json().catch(() => ({ error: 'unknown' }));
+      const err = asAuth0ErrorPayload(
+        await response.json().catch(() => ({ error: 'unknown' })),
+      );
 
       if (err.error === 'authorization_pending') return { status: 'pending' };
       if (err.error === 'access_denied') return { status: 'rejected' };
@@ -131,11 +183,12 @@ export class CibaService {
       const parts = token.split('.');
       if (parts.length !== 3) return undefined;
 
-      const payload = JSON.parse(
+      const parsed: unknown = JSON.parse(
         Buffer.from(parts[1], 'base64url').toString('utf8'),
-      ) as { sub?: string };
-
-      return payload.sub;
+      );
+      if (typeof parsed !== 'object' || parsed === null) return undefined;
+      const payload = parsed as Record<string, unknown>;
+      return typeof payload.sub === 'string' ? payload.sub : undefined;
     } catch {
       return undefined;
     }

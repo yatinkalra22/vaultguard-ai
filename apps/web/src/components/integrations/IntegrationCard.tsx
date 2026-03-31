@@ -6,18 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Loader2, ExternalLink } from "lucide-react";
 import { api, showErrorToast } from "@/lib/api";
-
-interface Integration {
-  id: string;
-  provider: string;
-  status: string;
-  connected_at: string | null;
-  last_scan_at: string | null;
-}
+import type { IntegrationItem, Provider } from "@/types/domain";
 
 interface IntegrationCardProps {
-  provider: "slack" | "github";
-  integration: Integration | null;
+  provider: Provider;
+  integration: IntegrationItem | null;
   onUpdate: () => void;
 }
 

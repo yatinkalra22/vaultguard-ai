@@ -4,23 +4,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Bot, Eye, ShieldAlert } from "lucide-react";
-
-interface Finding {
-  id: string;
-  provider: string;
-  severity: string;
-  type: string;
-  title: string;
-  description: string | null;
-  ai_recommendation: string | null;
-  affected_entity: Record<string, unknown> | null;
-  status: string;
-  created_at: string;
-}
+import type { FindingItem, FindingSeverity, FindingStatus, FindingType } from "@/types/domain";
 
 interface FindingCardProps {
-  finding: Finding;
-  onRemediate: (finding: Finding) => void;
+  finding: FindingItem;
+  onRemediate: (finding: FindingItem) => void;
   onIgnore: (findingId: string) => void;
 }
 
@@ -30,14 +18,14 @@ interface FindingCardProps {
  * Ref: 06-design-demo.md — Findings Page Layout with AI recommendation box
  */
 
-const severityColors: Record<string, string> = {
+const severityColors: Record<FindingSeverity, string> = {
   critical: "bg-[var(--risk-critical)]/20 text-[var(--risk-critical)] border-0",
   high: "bg-[var(--risk-high)]/20 text-[var(--risk-high)] border-0",
   medium: "bg-[var(--risk-medium)]/20 text-[var(--risk-medium)] border-0",
   low: "bg-[var(--risk-low)]/20 text-[var(--risk-low)] border-0",
 };
 
-const statusLabels: Record<string, string> = {
+const statusLabels: Record<FindingStatus, string> = {
   open: "Open",
   pending_approval: "Awaiting Approval",
   remediated: "Remediated",
@@ -49,7 +37,7 @@ const statusLabels: Record<string, string> = {
  * Judges score "User Control" — users should understand what data the
  * agent read to produce each finding. Transparency builds trust.
  */
-const dataAccessedMap: Record<string, string[]> = {
+const dataAccessedMap: Partial<Record<FindingType, string[]>> = {
   stale_user: ["Slack users list", "Admin roles", "Last active timestamps"],
   deactivated_admin: ["Slack users list", "Account status", "Admin flags"],
   shadow_app: ["Slack installed apps", "OAuth scopes"],
@@ -58,7 +46,7 @@ const dataAccessedMap: Record<string, string[]> = {
   org_owner_review: ["GitHub org members", "Owner roles"],
 };
 
-const complianceMap: Record<string, string[]> = {
+const complianceMap: Partial<Record<FindingType, string[]>> = {
   stale_user: ["NIST AC-2", "SOC2 CC6.2"],
   deactivated_admin: ["NIST AC-2(3)", "ISO 27001 A.9"],
   shadow_app: ["SOC2 CC6.6", "ISO 27001 A.8"],
@@ -67,7 +55,7 @@ const complianceMap: Record<string, string[]> = {
   org_owner_review: ["SOC2 CC6.1", "ISO 27001 A.6.1"],
 };
 
-const statusColors: Record<string, string> = {
+const statusColors: Record<FindingStatus, string> = {
   open: "border-border text-foreground",
   pending_approval: "bg-[var(--risk-medium)]/20 text-[var(--risk-medium)] border-0",
   remediated: "bg-[var(--risk-low)]/20 text-[var(--risk-low)] border-0",
@@ -76,6 +64,8 @@ const statusColors: Record<string, string> = {
 
 export function FindingCard({ finding, onRemediate, onIgnore }: FindingCardProps) {
   const isActionable = finding.status === "open";
+  const dataAccessed = dataAccessedMap[finding.type];
+  const complianceControls = complianceMap[finding.type];
 
   return (
     <Card>
@@ -100,13 +90,13 @@ export function FindingCard({ finding, onRemediate, onIgnore }: FindingCardProps
             </div>
           </div>
           <div className="flex gap-1.5 shrink-0">
-            <Badge className={severityColors[finding.severity] ?? ""}>
+            <Badge className={severityColors[finding.severity]}>
               {finding.severity}
             </Badge>
-            <Badge className={statusColors[finding.status] ?? ""}
+            <Badge className={statusColors[finding.status]}
               variant="outline"
             >
-              {statusLabels[finding.status] ?? finding.status}
+              {statusLabels[finding.status]}
             </Badge>
           </div>
         </div>
@@ -132,20 +122,20 @@ export function FindingCard({ finding, onRemediate, onIgnore }: FindingCardProps
         )}
 
         {/* Data accessed — transparency indicator */}
-        {dataAccessedMap[finding.type] && (
+        {dataAccessed && (
           <div className="flex items-start gap-1.5 text-xs text-muted-foreground">
             <Eye className="h-3 w-3 shrink-0 mt-0.5" />
             <span>
               <span className="font-medium">Data accessed:</span>{" "}
-              {dataAccessedMap[finding.type].join(", ")}
+              {dataAccessed.join(", ")}
             </span>
           </div>
         )}
 
         {/* Compliance mapping */}
-        {complianceMap[finding.type] && (
+        {complianceControls && (
           <div className="flex flex-wrap items-center gap-1.5">
-            {complianceMap[finding.type].map((control) => (
+            {complianceControls.map((control) => (
               <Badge key={control} variant="outline" className="text-[10px]">
                 {control}
               </Badge>
