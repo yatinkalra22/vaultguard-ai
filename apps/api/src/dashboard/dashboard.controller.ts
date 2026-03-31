@@ -2,6 +2,7 @@ import { Controller, Get, Req, Sse, UseGuards } from '@nestjs/common';
 import { Observable, Subject, filter, map } from 'rxjs';
 import { OnEvent } from '@nestjs/event-emitter';
 import { SkipThrottle } from '@nestjs/throttler';
+import { Request } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { DashboardService } from './dashboard.service';
 
@@ -25,6 +26,13 @@ interface ScanEvent {
   timestamp: string;
 }
 
+interface AuthenticatedRequest extends Request {
+  user?: {
+    orgId?: string;
+    org_id?: string;
+  };
+}
+
 @Controller('dashboard')
 @UseGuards(JwtAuthGuard)
 export class DashboardController {
@@ -39,7 +47,7 @@ export class DashboardController {
    * Returns aggregated dashboard data in a single request.
    */
   @Get('summary')
-  async getSummary(@Req() req: any) {
+  async getSummary(@Req() req: AuthenticatedRequest) {
     // WHY: orgId comes from the JWT — users only see their own org's data.
     // Fallback to 'default' for local dev where org_id may not be in the token.
     const orgId = req.user?.orgId ?? req.user?.org_id ?? 'default';
@@ -56,7 +64,7 @@ export class DashboardController {
   // WHY: SSE is a long-lived connection — throttling it would kill the stream.
   @SkipThrottle()
   @Sse('events')
-  events(@Req() req: any): Observable<MessageEvent> {
+  events(@Req() req: AuthenticatedRequest): Observable<MessageEvent> {
     const orgId = req.user?.orgId ?? req.user?.org_id ?? 'default';
 
     return this.eventSubject.pipe(

@@ -23,7 +23,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
-    const requestId = (request as any).id ?? 'unknown';
+    const requestId = request.id ?? 'unknown';
 
     // WHY: HttpExceptions (thrown by guards, validators, controllers) are
     // intentional — their messages are safe to return to clients.

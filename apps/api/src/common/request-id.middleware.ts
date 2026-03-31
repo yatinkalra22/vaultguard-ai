@@ -20,7 +20,7 @@ export function requestIdMiddleware(
 
   // WHY: Attach to req so downstream code (guards, services, exception filter)
   // can access it without importing a separate context module.
-  (req as any).id = requestId;
+  req.id = requestId;
 
   // WHY: Echo back in response so clients/load balancers can correlate.
   res.setHeader('X-Request-Id', requestId);

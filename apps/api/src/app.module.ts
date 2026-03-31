@@ -37,7 +37,9 @@ import { HealthController } from './health.controller';
             ? { target: 'pino-pretty', options: { colorize: true } }
             : undefined,
         // WHY: Attach request ID from our middleware for log correlation.
-        customProps: (req: any) => ({ requestId: req.id }),
+        customProps: (req, _res) => ({
+          requestId: String((req as { id?: unknown }).id ?? 'unknown'),
+        }),
         autoLogging: true,
         // WHY: Redact authorization header to prevent token leakage in logs.
         redact: ['req.headers.authorization'],

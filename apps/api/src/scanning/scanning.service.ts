@@ -1,9 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { SupabaseService } from '../common/supabase.service';
-import { SlackService } from '../slack/slack.service';
+import { SlackApp, SlackService, SlackUser } from '../slack/slack.service';
 import { SlackScanner } from '../slack/slack.scanner';
-import { GithubService } from '../github/github.service';
+import {
+  GithubService,
+  GitHubInstallation,
+  GitHubMember,
+} from '../github/github.service';
 import { GithubScanner } from '../github/github.scanner';
 import { AiService } from '../ai/ai.service';
 
@@ -61,6 +65,12 @@ export class ScanningService {
       const [slackUsers, slackApps, githubMembers, githubCollabs, githubApps] =
         results.map((r) => (r.status === 'fulfilled' ? r.value : []));
 
+      const typedSlackUsers = slackUsers as SlackUser[];
+      const typedSlackApps = slackApps as SlackApp[];
+      const typedGithubMembers = githubMembers as GitHubMember[];
+      const typedGithubCollabs = githubCollabs as GitHubMember[];
+      const typedGithubApps = githubApps as GitHubInstallation[];
+
       if (!githubOrg) {
         this.logger.warn(
           `Scan ${scan.id}: DEFAULT_GITHUB_ORG not configured, skipping GitHub scans`,
@@ -78,13 +88,13 @@ export class ScanningService {
       // 3. Run local anomaly detection
       const rawFindings = [
         ...this.slackScanner
-          .analyze(slackUsers as any[], slackApps as any[])
+          .analyze(typedSlackUsers, typedSlackApps)
           .map((f) => ({ ...f, provider: 'slack' as const })),
         ...this.githubScanner
           .analyze(
-            githubMembers as any[],
-            githubCollabs as any[],
-            githubApps as any[],
+            typedGithubMembers,
+            typedGithubCollabs,
+            typedGithubApps,
             githubOrg,
           )
           .map((f) => ({ ...f, provider: 'github' as const })),
@@ -143,8 +153,10 @@ export class ScanningService {
         riskScore: aiAnalysis.riskScore,
         summary: aiAnalysis.summary,
       };
-    } catch (err: any) {
-      this.logger.error(`Scan ${scan.id} failed:`, err);
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof Error ? err.message : 'Unknown scan failure';
+      this.logger.error(`Scan ${scan.id} failed: ${errorMessage}`);
 
       await this.supabase.client
         .from('scans')

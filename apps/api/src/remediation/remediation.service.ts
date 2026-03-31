@@ -15,6 +15,21 @@ const ACTION_DESCRIPTIONS: Record<string, string> = {
   flag_app: 'Flag app for review',
 };
 
+interface RemediationRow {
+  id: string;
+  org_id: string;
+  finding_id: string;
+  action: string;
+  requested_by: string;
+  ciba_auth_req_id: string;
+  target_entity: Record<string, unknown>;
+  status: string;
+}
+
+function toStringOrEmpty(value: unknown): string {
+  return typeof value === 'string' ? value : '';
+}
+
 function resolveExpectedAction(
   provider: string,
   type: string,
@@ -187,25 +202,31 @@ export class RemediationService {
     return { ...rem, status };
   }
 
-  private async executeRemediation(
-    rem: Record<string, any>,
-    approverSub?: string,
-  ) {
+  private async executeRemediation(rem: RemediationRow, approverSub?: string) {
     const actor = approverSub ?? rem.requested_by;
 
     try {
       // Execute the actual action against Slack or GitHub API
       if (rem.action === 'revoke_slack_user') {
+        const targetUserId = toStringOrEmpty(rem.target_entity.id);
+        const teamId = toStringOrEmpty(rem.target_entity.team_id);
+
         await this.slackService.deactivateUser(
           rem.requested_by,
-          rem.target_entity.id,
-          rem.target_entity.team_id ?? '',
+          targetUserId,
+          teamId,
         );
       } else if (rem.action === 'remove_github_member') {
+        const org =
+          toStringOrEmpty(rem.target_entity.org) ||
+          process.env.DEFAULT_GITHUB_ORG ||
+          '';
+        const username = toStringOrEmpty(rem.target_entity.login);
+
         await this.githubService.removeOrgMember(
           rem.requested_by,
-          rem.target_entity.org ?? process.env.DEFAULT_GITHUB_ORG ?? '',
-          rem.target_entity.login,
+          org,
+          username,
         );
       }
 
@@ -232,8 +253,10 @@ export class RemediationService {
         target: rem.target_entity,
         metadata: { remediation_id: rem.id, action: rem.action },
       });
-    } catch (err: any) {
-      this.logger.error(`Remediation execution failed: ${err.message}`);
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof Error ? err.message : 'Unknown remediation failure';
+      this.logger.error(`Remediation execution failed: ${errorMessage}`);
 
       await this.supabase.client
         .from('remediations')
