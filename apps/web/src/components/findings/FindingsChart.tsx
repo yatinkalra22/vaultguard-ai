@@ -45,6 +45,13 @@ interface FindingsAnalytics {
   remediationTimeAverage: number;
 }
 
+interface Finding {
+  id: string;
+  title: string;
+  severity: string;
+  type?: string;
+}
+
 const SEVERITY_COLORS = {
   critical: '#dc2626',
   high: '#f97316',
@@ -54,13 +61,18 @@ const SEVERITY_COLORS = {
 
 export function FindingsChart() {
   const [analytics, setAnalytics] = useState<FindingsAnalytics | null>(null);
+  const [openFindings, setOpenFindings] = useState<Finding[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
-        const analytics = await api.get<FindingsAnalytics>('/findings/analytics/dashboard');
-        setAnalytics(analytics);
+        const [dashboardAnalytics, findings] = await Promise.all([
+          api.get<FindingsAnalytics>('/findings/analytics/dashboard'),
+          api.get<Finding[]>('/findings', { status: 'open', severity: 'all' }),
+        ]);
+        setAnalytics(dashboardAnalytics);
+        setOpenFindings(findings);
       } catch (error) {
         console.error('Failed to fetch analytics:', error);
       } finally {
@@ -104,35 +116,24 @@ export function FindingsChart() {
     count: value,
   }));
 
-    // Mock findings data for bulk actions
-    const mockFindings = [
-      {
-        id: 'finding-1',
-        title: analytics.topRisks[0]?.title || 'Critical Finding',
-        severity: 'critical',
-        category: 'IAM & Access',
-      },
-      {
-        id: 'finding-2',
-        title: analytics.topRisks[1]?.title || 'High Finding',
-        severity: 'high',
-        category: 'Data Exposure',
-      },
-      ...Array.from({ length: 3 }, (_, i) => ({
-        id: `finding-${i + 3}`,
-        title: `Additional Finding ${i + 3}`,
-        severity: i % 2 === 0 ? 'high' : 'medium',
-        category: 'Configuration',
-      })),
-    ];
+  const remediationCandidates = openFindings
+    .filter((f) => f.severity === 'critical' || f.severity === 'high')
+    .map((finding) => ({
+      id: finding.id,
+      title: finding.title,
+      severity: finding.severity,
+      category: finding.type ?? 'Other',
+    }));
 
   return (
     <div className="space-y-8">
       {/* Remediation Bulk Actions Panel */}
       <RemediationBulkActions
-        findings={mockFindings}
+        findings={remediationCandidates}
         onRemediateBatch={(findingIds) => {
-          console.log('Remediating:', findingIds);
+          setOpenFindings((current) =>
+            current.filter((finding) => !findingIds.includes(finding.id))
+          );
         }}
       />
 

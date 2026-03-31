@@ -1,7 +1,16 @@
-import { Controller, Get, Post, Req, Sse, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Req,
+  Sse,
+  UseGuards,
+  ForbiddenException,
+} from '@nestjs/common';
 import { Observable, Subject, filter, map } from 'rxjs';
 import { OnEvent } from '@nestjs/event-emitter';
 import { SkipThrottle } from '@nestjs/throttler';
+import { ConfigService } from '@nestjs/config';
 import { Request } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { DashboardService } from './dashboard.service';
@@ -44,6 +53,7 @@ export class DashboardController {
   constructor(
     private readonly dashboardService: DashboardService,
     private readonly supabase: SupabaseService,
+    private readonly config: ConfigService,
   ) {}
 
   /**
@@ -127,6 +137,10 @@ export class DashboardController {
    */
   @Post('demo-seed')
   async seedDemo(@Req() req: AuthenticatedRequest) {
+    if (this.config.get('ENABLE_DEMO_ENDPOINTS') !== 'true') {
+      throw new ForbiddenException('Demo endpoints are disabled');
+    }
+
     const orgId = req.user?.orgId ?? req.user?.org_id ?? 'default';
     const actor = 'demo-seed';
 
@@ -201,6 +215,10 @@ export class DashboardController {
    */
   @Post('demo-reset')
   async resetDemo(@Req() req: AuthenticatedRequest) {
+    if (this.config.get('ENABLE_DEMO_ENDPOINTS') !== 'true') {
+      throw new ForbiddenException('Demo endpoints are disabled');
+    }
+
     const orgId = req.user?.orgId ?? req.user?.org_id ?? 'default';
 
     await Promise.all([

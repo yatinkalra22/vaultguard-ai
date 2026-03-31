@@ -37,8 +37,9 @@ class TelemetryService {
   private queue: TelemetryEvent[] = [];
   private batchSize = 10;
   private batchTimeoutMs = 5000;
-  private endpoint = '/api/telemetry';
+  private endpoint = '/api/proxy/telemetry';
   private batchTimer: NodeJS.Timeout | null = null;
+  private readonly enableDebug = process.env.NODE_ENV !== 'production';
 
   constructor() {
     // Only setup in browser
@@ -55,14 +56,16 @@ class TelemetryService {
     event.userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : undefined;
     this.queue.push(event);
 
-    console.debug('[Telemetry]', `${event.type}:`, {
-      code: event.code,
-      status: event.status,
-      message: event.message,
-      requestId: event.requestId,
-      route: event.route,
-      action: event.action,
-    });
+    if (this.enableDebug) {
+      console.debug('[Telemetry]', `${event.type}:`, {
+        code: event.code,
+        status: event.status,
+        message: event.message,
+        requestId: event.requestId,
+        route: event.route,
+        action: event.action,
+      });
+    }
 
     this.flushIfReady();
   }
@@ -71,11 +74,13 @@ class TelemetryService {
     event.timestamp = Date.now();
     this.queue.push(event);
 
-    console.debug('[Telemetry]', `${event.type}:`, {
-      action: event.action,
-      requestId: event.requestId,
-      duration: event.duration,
-    });
+    if (this.enableDebug) {
+      console.debug('[Telemetry]', `${event.type}:`, {
+        action: event.action,
+        requestId: event.requestId,
+        duration: event.duration,
+      });
+    }
 
     this.flushIfReady();
   }
@@ -84,13 +89,15 @@ class TelemetryService {
     event.timestamp = Date.now();
     this.queue.push(event);
 
-    console.debug('[Telemetry]', `${event.type}:`, {
-      code: event.code,
-      status: event.status,
-      attempt: event.attempt,
-      maxAttempts: event.maxAttempts,
-      requestId: event.requestId,
-    });
+    if (this.enableDebug) {
+      console.debug('[Telemetry]', `${event.type}:`, {
+        code: event.code,
+        status: event.status,
+        attempt: event.attempt,
+        maxAttempts: event.maxAttempts,
+        requestId: event.requestId,
+      });
+    }
 
     this.flushIfReady();
   }
@@ -114,7 +121,9 @@ class TelemetryService {
       });
     } catch (error) {
       // Silently fail — don't break user experience over telemetry
-      console.debug('[Telemetry] Flush failed:', error);
+      if (this.enableDebug) {
+        console.debug('[Telemetry] Flush failed:', error);
+      }
       // Re-queue if failed (with limit to prevent memory leak)
       if (this.queue.length < 100) {
         this.queue.unshift(...batch);

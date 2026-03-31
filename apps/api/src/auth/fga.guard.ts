@@ -9,7 +9,8 @@ import { FgaService } from './fga.service';
 /**
  * WHY: Guard that checks FGA before allowing remediation approval.
  * Apply with @UseGuards(FgaGuard) on endpoints that modify access.
- * If FGA is not configured, the guard is permissive (dev mode).
+ * If FGA is not configured, access is denied unless explicit insecure dev
+ * mode is enabled.
  */
 @Injectable()
 export class FgaGuard implements CanActivate {

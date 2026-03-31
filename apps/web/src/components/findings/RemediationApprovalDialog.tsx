@@ -46,7 +46,11 @@ export function RemediationApprovalDialog({
         findingIds: Array.from(selectedFindings),
       });
 
-        showSuccessToast(`Remediations approved: ${selectedFindings.size} findings queued for auto-fix`, undefined, 4000);
+        showSuccessToast(
+          `Approval requests submitted for ${selectedFindings.size} finding(s)`,
+          undefined,
+          4000,
+        );
 
       onApprove();
       onClose();

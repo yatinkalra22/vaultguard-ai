@@ -60,14 +60,21 @@ export class FgaService {
     orgId: string,
   ): Promise<boolean> {
     if (!this.client) {
-      const isProduction = this.config.get('NODE_ENV') === 'production';
-      if (isProduction) {
-        this.logger.error(
-          'FGA not configured in production — denying remediation approval',
+      const isDevelopment = this.config.get('NODE_ENV') === 'development';
+      const allowInsecureDevAuth =
+        this.config.get('ALLOW_INSECURE_DEV_AUTH') === 'true';
+
+      if (isDevelopment && allowInsecureDevAuth) {
+        this.logger.warn(
+          'FGA not configured and ALLOW_INSECURE_DEV_AUTH=true — allowing remediation approval in development',
         );
-        return false;
+        return true;
       }
-      return true;
+
+      this.logger.error(
+        'FGA not configured — denying remediation approval. Set ALLOW_INSECURE_DEV_AUTH=true only for local development.',
+      );
+      return false;
     }
 
     try {

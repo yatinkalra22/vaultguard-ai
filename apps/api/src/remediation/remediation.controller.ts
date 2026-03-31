@@ -126,13 +126,34 @@ export class RemediationController {
         target: { finding_ids: body.findingIds, count: body.findingIds.length },
       });
 
-      // Queue remediations for async execution
+      const successful: string[] = [];
+      const failed: Array<{ findingId: string; reason: string }> = [];
+
+      for (const findingId of body.findingIds) {
+        try {
+          await this.remediationService.requestRemediation({
+            findingId,
+            orgId,
+            userSub: req.user.sub,
+            action: '',
+            targetEntity: {},
+          });
+          successful.push(findingId);
+        } catch (err: unknown) {
+          const reason =
+            err instanceof Error ? err.message : 'Failed to queue remediation';
+          failed.push({ findingId, reason });
+        }
+      }
+
       return {
         batchId: `batch-${Date.now()}`,
-        findingCount: body.findingIds.length,
-        status: 'queued',
-        estimatedTime: 5 + body.findingIds.length * 2, // minutes
-        message: `${body.findingIds.length} findings queued for auto-remediation`,
+        requested: body.findingIds.length,
+        queued: successful.length,
+        failedCount: failed.length,
+        failed,
+        status: failed.length > 0 ? 'partial' : 'queued',
+        message: `${successful.length} remediation approval request(s) submitted`,
       };
     }
   }

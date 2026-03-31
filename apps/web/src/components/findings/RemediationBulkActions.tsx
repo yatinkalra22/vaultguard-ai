@@ -19,11 +19,7 @@ export function RemediationBulkActions({
   onRemediateBatch,
 }: RemediationBulkActionsProps) {
   const [showApprovalDialog, setShowApprovalDialog] = useState(false);
-  const [remediationProgress, setRemediationProgress] = useState<{
-    total: number;
-    completed: number;
-    failed: number;
-  } | null>(null);
+  const [queuedCount, setQueuedCount] = useState<number>(0);
 
   // Filter critical/high findings
   const criticalFindings = findings.filter(
@@ -34,11 +30,7 @@ export function RemediationBulkActions({
 
   const handleApprove = () => {
     onRemediateBatch(criticalFindings.map((f) => f.id));
-    setRemediationProgress({
-      total: criticalFindings.length,
-      completed: 0,
-      failed: 0,
-    });
+    setQueuedCount(criticalFindings.length);
   };
 
   return (
@@ -54,8 +46,8 @@ export function RemediationBulkActions({
               {criticalFindings.length} Critical/High Findings Detected
             </h3>
             <p className="text-sm text-gray-600 mt-1">
-              VaultGuard can automatically remediate these findings with zero downtime.
-              Review and approve below.
+              Submit approval requests for these findings and execute remediation
+              after confirmation.
             </p>
 
             {/* Quick Stats */}
@@ -89,29 +81,12 @@ export function RemediationBulkActions({
           </button>
         </div>
 
-        {/* Remediation Progress */}
-        {remediationProgress && (
+        {/* Queue Status */}
+        {queuedCount > 0 && (
           <div className="mt-4 pt-4 border-t border-red-200">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-semibold text-gray-700">
-                Remediation Progress
-              </span>
-              <span className="text-sm font-semibold text-gray-600">
-                {remediationProgress.completed}/{remediationProgress.total}
-              </span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div
-                className="bg-green-500 h-2 rounded-full transition-all duration-300"
-                style={{
-                  width: `${(remediationProgress.completed / remediationProgress.total) * 100}%`,
-                }}
-              />
-            </div>
-            <p className="text-xs text-gray-600 mt-2">
-              {remediationProgress.completed === remediationProgress.total
-                ? 'All remediations completed successfully!'
-                : 'Remediations in progress...'}
+            <p className="text-xs text-gray-600">
+              Submitted {queuedCount} remediation approval request(s). Track status from
+              the remediations list.
             </p>
           </div>
         )}

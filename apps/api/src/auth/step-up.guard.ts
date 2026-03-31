@@ -27,9 +27,11 @@ export class StepUpGuard implements CanActivate {
   constructor(private readonly config: ConfigService) {}
 
   canActivate(context: ExecutionContext): boolean {
-    // WHY: Skip step-up enforcement in development when MFA is not configured.
-    // Production must always enforce — fail-closed.
-    const isProduction = this.config.get('NODE_ENV') === 'production';
+    // WHY: MFA bypass is allowed only for explicit local dev mode.
+    // All other environments fail-closed.
+    const isDevelopment = this.config.get('NODE_ENV') === 'development';
+    const allowInsecureDevAuth =
+      this.config.get('ALLOW_INSECURE_DEV_AUTH') === 'true';
 
     const request = context.switchToHttp().getRequest();
     const user = request.user;
@@ -45,10 +47,9 @@ export class StepUpGuard implements CanActivate {
     const authTime: number | null = user[`${namespace}/auth_time`] || user.authTime || null;
 
     if (!amr.includes('mfa')) {
-      if (!isProduction) {
+      if (isDevelopment && allowInsecureDevAuth) {
         this.logger.warn(
-          'Step-up guard: MFA not detected — allowing in development. ' +
-          'Configure Auth0 MFA + Post-Login Action for production.',
+          'Step-up guard: MFA not detected — allowing because ALLOW_INSECURE_DEV_AUTH=true in development.',
         );
         return true;
       }

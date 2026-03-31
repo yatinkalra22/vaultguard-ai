@@ -64,10 +64,9 @@ export class IntegrationsService {
     const domain = this.config.get<string>('AUTH0_DOMAIN');
     const clientId = this.config.get<string>('AUTH0_CLIENT_ID');
     const audience = this.config.get<string>('AUTH0_AUDIENCE');
-    const baseUrl =
-      this.config.get<string>('AUTH0_BASE_URL') ?? 'http://localhost:3000';
+    const baseUrl = this.config.get<string>('AUTH0_BASE_URL');
 
-    if (!domain || !clientId || !audience) {
+    if (!domain || !clientId || !audience || !baseUrl) {
       throw new BadRequestException(
         'Auth0 configuration is incomplete for integration connect flow',
       );

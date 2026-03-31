@@ -21,33 +21,54 @@ export class FindingsController {
 
   /** Get comprehensive analytics dashboard. */
   @Get('analytics/dashboard')
-  getAnalyticsDashboard() {
-    return this.analyticsService.getDashboardAnalytics();
+  getAnalyticsDashboard(
+    @Request() req: { user: { orgId?: string } },
+  ) {
+    const orgId = req.user.orgId;
+    if (!orgId) return this.analyticsService.getDashboardAnalytics('');
+    return this.analyticsService.getDashboardAnalytics(orgId);
   }
 
   /** Get severity breakdown for pie chart. */
   @Get('analytics/severity')
-  getSeverityBreakdown() {
-    return this.analyticsService.getSeverityBreakdown();
+  getSeverityBreakdown(
+    @Request() req: { user: { orgId?: string } },
+  ) {
+    const orgId = req.user.orgId;
+    if (!orgId) return this.analyticsService.getSeverityBreakdown('');
+    return this.analyticsService.getSeverityBreakdown(orgId);
   }
 
   /** Get category breakdown for bar chart. */
   @Get('analytics/category')
-  getCategoryBreakdown() {
-    return this.analyticsService.getCategoryBreakdown();
+  getCategoryBreakdown(
+    @Request() req: { user: { orgId?: string } },
+  ) {
+    const orgId = req.user.orgId;
+    if (!orgId) return this.analyticsService.getCategoryBreakdown('');
+    return this.analyticsService.getCategoryBreakdown(orgId);
   }
 
   /** Get findings trend data for line chart. */
   @Get('analytics/trends')
-  getFindingsTrend() {
-    return this.analyticsService.getFindingsTrend();
+  getFindingsTrend(
+    @Request() req: { user: { orgId?: string } },
+  ) {
+    const orgId = req.user.orgId;
+    if (!orgId) return this.analyticsService.getFindingsTrend('');
+    return this.analyticsService.getFindingsTrend(orgId);
   }
 
   /** Get top risks ranked by severity and impact. */
   @Get('analytics/top-risks')
-  getTopRisks(@Query('limit') limit?: string) {
+  getTopRisks(
+    @Request() req: { user: { orgId?: string } },
+    @Query('limit') limit?: string,
+  ) {
+    const orgId = req.user.orgId;
     const parsedLimit = limit ? parseInt(limit, 10) : undefined;
-    return this.analyticsService.getTopRisks(parsedLimit);
+    if (!orgId) return this.analyticsService.getTopRisks('', parsedLimit);
+    return this.analyticsService.getTopRisks(orgId, parsedLimit);
   }
 
   /** List all findings with optional filters. */

@@ -1,9 +1,11 @@
-import { Controller, Post, Body, Logger } from '@nestjs/common';
+import { Controller, Post, Body, Logger, UseGuards } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 /**
  * Telemetry controller — receives client-side observability events
  * Logs user behavior patterns: errors, retries, successes
- * No auth required — telemetry collection happens before auth context
+ * Telemetry is authenticated to prevent anonymous event flooding.
  */
 
 export interface TelemetryEvent {
@@ -24,17 +26,25 @@ export interface TelemetryPayload {
   events: TelemetryEvent[];
 }
 
-@Controller('api/telemetry')
+@Controller('telemetry')
+@UseGuards(JwtAuthGuard)
 export class TelemetryController {
   private readonly logger = new Logger('Telemetry');
 
   @Post()
+  @Throttle({ default: { ttl: 60_000, limit: 30 } })
   async recordEvents(@Body() payload: TelemetryPayload) {
     if (!payload?.events || !Array.isArray(payload.events)) {
       return { recorded: 0 };
     }
 
-    for (const event of payload.events) {
+    const events = payload.events.slice(0, 50);
+
+    for (const event of events) {
+      if (!event.type || typeof event.type !== 'string') {
+        continue;
+      }
+
       // Log structure: [TYPE] action action=X code=X status=X requestId=X
       const parts: string[] = [];
 
@@ -47,11 +57,9 @@ export class TelemetryController {
 
       // In production, push to observability backend (Datadog, NewRelic, etc.)
       // For now, just log for local debugging
-      this.logger.debug(
-        parts.join(' ') || event.message || 'telemetry event'
-      );
+      this.logger.debug(parts.join(' ') || event.message || 'telemetry event');
     }
 
-    return { recorded: payload.events.length };
+    return { recorded: events.length };
   }
 }
