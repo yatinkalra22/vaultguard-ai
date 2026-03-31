@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Play, Loader2 } from "lucide-react";
-import { api, getErrorMessage } from "@/lib/api";
+import { api, showErrorToast, showSuccessToast } from "@/lib/api";
 
 /**
  * WHY: Manual scan trigger is the first demo action — "click Run Scan Now,
@@ -12,16 +12,15 @@ import { api, getErrorMessage } from "@/lib/api";
  */
 export function TriggerScanButton() {
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   async function handleTrigger() {
     setLoading(true);
-    setError(null);
 
     try {
       await api.post("scans/trigger");
+      showSuccessToast("Scan started", "Scanning your connected SaaS tools...");
     } catch (err: unknown) {
-      setError(getErrorMessage(err, "Unable to run scan right now. Please try again."));
+      showErrorToast(err, "trigger_scan");
     } finally {
       setLoading(false);
     }
@@ -37,9 +36,6 @@ export function TriggerScanButton() {
         )}
         {loading ? "Scanning..." : "Run Scan Now"}
       </Button>
-      {error && (
-        <span className="text-xs text-[var(--risk-critical)]">{error}</span>
-      )}
     </div>
   );
 }

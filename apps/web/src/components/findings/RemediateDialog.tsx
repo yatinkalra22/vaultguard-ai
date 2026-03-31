@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, ShieldAlert, ShieldCheck, X } from "lucide-react";
-import { api, getErrorMessage, isStepUpRequiredError } from "@/lib/api";
+import { api, isStepUpRequiredError, showErrorToast, showSuccessToast } from "@/lib/api";
 
 interface Finding {
   id: string;
@@ -40,11 +40,9 @@ export function RemediateDialog({
   onSuccess,
 }: RemediateDialogProps) {
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   async function handleConfirm() {
     setLoading(true);
-    setError(null);
 
     try {
       let action = "flag_app";
@@ -63,6 +61,7 @@ export function RemediateDialog({
         targetEntity: finding.affected_entity ?? {},
       });
 
+      showSuccessToast("Remediation initiated", "Remediation request sent for approval");
       onSuccess();
     } catch (err: unknown) {
       // WHY: If the backend returns step_up_required, redirect to MFA.
@@ -72,7 +71,7 @@ export function RemediateDialog({
         return;
       }
 
-      setError(getErrorMessage(err, "Unable to start remediation. Please try again."));
+      showErrorToast(err, "remediate_finding");
     } finally {
       setLoading(false);
     }
@@ -146,10 +145,6 @@ export function RemediateDialog({
               via Auth0 CIBA. The action will only execute after you approve.
             </p>
           </div>
-
-          {error && (
-            <p className="text-sm text-[var(--risk-critical)]">{error}</p>
-          )}
 
           <div className="flex gap-2 justify-end pt-1">
             <Button variant="ghost" size="sm" onClick={onClose}>

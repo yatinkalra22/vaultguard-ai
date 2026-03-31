@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Geist_Mono } from "next/font/google";
 import { Auth0Provider } from "@auth0/nextjs-auth0/client";
+import { ToastContainer } from "@/components/ui/ToastContainer";
 import "./globals.css";
 
 // WHY: Inter for body text — widely used in modern dashboards (Linear, Vercel).
@@ -32,7 +33,10 @@ export default function RootLayout({
       className={`${inter.variable} ${geistMono.variable} dark h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground font-sans">
-        <Auth0Provider>{children}</Auth0Provider>
+        <Auth0Provider>
+          {children}
+          <ToastContainer />
+        </Auth0Provider>
       </body>
     </html>
   );

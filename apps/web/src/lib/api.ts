@@ -2,6 +2,9 @@
 // All requests go through /api/proxy/* which injects the Auth0 token server-side.
 // This keeps the access token out of client-side JavaScript entirely.
 
+import { toast } from "@/lib/toast";
+import { telemetry } from "@/lib/telemetry";
+
 const BASE = "/api/proxy";
 
 export const ERROR_CODES = {
@@ -20,13 +23,13 @@ export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];
 
 const ERROR_CODE_MESSAGES: Record<ErrorCode, string> = {
   [ERROR_CODES.UNAUTHORIZED]: "Your session has expired. Please sign in again.",
-  [ERROR_CODES.FORBIDDEN]: "You do not have permission to perform this action.",
-  [ERROR_CODES.VALIDATION_FAILED]: "Please check the entered details and try again.",
-  [ERROR_CODES.NOT_FOUND]: "We could not find what you requested.",
+  [ERROR_CODES.FORBIDDEN]: "You don't have permission to perform this action.",
+  [ERROR_CODES.VALIDATION_FAILED]: "Please check your input and try again.",
+  [ERROR_CODES.NOT_FOUND]: "The requested resource could not be found.",
   [ERROR_CODES.RATE_LIMITED]: "Too many requests. Please wait a moment and try again.",
   [ERROR_CODES.STEP_UP_REQUIRED]: "Please verify your identity with MFA to continue.",
   [ERROR_CODES.STEP_UP_EXPIRED]: "Your verification expired. Please complete MFA again.",
-  [ERROR_CODES.INTERNAL_ERROR]: "Something went wrong on our side. Please try again shortly.",
+  [ERROR_CODES.INTERNAL_ERROR]: "Something went wrong. Please try again shortly.",
   [ERROR_CODES.BACKEND_UNAVAILABLE]: "Service is temporarily unavailable. Please try again.",
 };
 
@@ -89,7 +92,7 @@ export function normalizeHumanMessage(status: number, code?: string): string {
   }
 
   if (status === 400) {
-    return "Please check the entered details and try again.";
+    return "Please check your input and try again.";
   }
 
   if (status === 401) {
@@ -97,11 +100,11 @@ export function normalizeHumanMessage(status: number, code?: string): string {
   }
 
   if (status === 403) {
-    return "You do not have permission to perform this action.";
+    return "You don't have permission to perform this action.";
   }
 
   if (status === 404) {
-    return "We could not find what you requested.";
+    return "The requested resource could not be found.";
   }
 
   if (status === 429) {
@@ -112,7 +115,7 @@ export function normalizeHumanMessage(status: number, code?: string): string {
     return ERROR_CODE_MESSAGES[ERROR_CODES.INTERNAL_ERROR];
   }
 
-  return "Request failed. Please try again.";
+  return "Something went wrong. Please try again.";
 }
 
 export function getErrorMessage(error: unknown, fallback = "Something went wrong"): string {
@@ -168,12 +171,24 @@ async function requestWithRetry<T>(request: () => Promise<Response>): Promise<T>
         throw error;
       }
 
+      // Log retry attempt
+      if (error instanceof ApiError) {
+        telemetry.logRetry({
+          type: "retry_attempt",
+          code: error.code,
+          status: error.status,
+          attempt,
+          maxAttempts: MAX_RETRIES,
+          requestId: error.requestId,
+        });
+      }
+
       await sleep(retryDelayMs(attempt));
     }
   }
 }
 
-async function parseErrorBody(res: Response): Promise<unknown> {
+export async function parseErrorBody(res: Response): Promise<unknown> {
   const contentType = res.headers.get("content-type") ?? "";
   if (contentType.includes("application/json")) {
     return res.json().catch(() => null);
@@ -237,3 +252,55 @@ export const api = {
     return requestWithRetry<T>(() => fetch(`${BASE}/${path}`, { method: "DELETE" }));
   },
 };
+
+// Toast + Telemetry helpers for common operations
+export function showErrorToast(error: unknown, action?: string) {
+  if (error instanceof ApiError) {
+    telemetry.logError({
+      type: "api_error",
+      code: error.code,
+      status: error.status,
+      message: error.technicalMessage || error.message,
+      requestId: error.requestId,
+      action,
+    });
+
+    toast.error(
+      error.code === ERROR_CODES.STEP_UP_REQUIRED
+        ? "Verification Required"
+        : "Operation Failed",
+      {
+        message: error.message,
+        requestId: error.requestId,
+        duration: 5000,
+      }
+    );
+  } else if (error instanceof Error) {
+    telemetry.logError({
+      type: "network_error",
+      message: error.message,
+      action,
+    });
+
+    toast.error("Something went wrong", {
+      message: "Please check your connection and try again.",
+      duration: 5000,
+    });
+  }
+}
+
+export function showSuccessToast(message: string, action?: string, duration = 3000) {
+  telemetry.logSuccess({
+    type: "action_completed",
+    action: action || message,
+  });
+
+  toast.success(message, { duration });
+}
+
+export function showWarningToast(message: string, action?: string) {
+  toast.warning(message, {
+    message: action,
+    duration: 4000,
+  });
+}

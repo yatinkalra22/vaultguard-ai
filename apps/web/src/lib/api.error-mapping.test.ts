@@ -28,7 +28,7 @@ describe("normalizeHumanMessage", () => {
 
   it("maps status-only 500 to generic safe server message", () => {
     expect(normalizeHumanMessage(500)).toBe(
-      "Something went wrong on our side. Please try again shortly."
+      "Something went wrong. Please try again shortly."
     );
   });
 
