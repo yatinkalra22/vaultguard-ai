@@ -9,11 +9,46 @@ import {
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { SupabaseService } from '../common/supabase.service';
+import { FindingsAnalyticsService } from './findings-analytics.service';
 
 @Controller('findings')
 @UseGuards(JwtAuthGuard)
 export class FindingsController {
-  constructor(private readonly supabase: SupabaseService) {}
+  constructor(
+    private readonly supabase: SupabaseService,
+    private readonly analyticsService: FindingsAnalyticsService,
+  ) {}
+
+  /** Get comprehensive analytics dashboard. */
+  @Get('analytics/dashboard')
+  getAnalyticsDashboard() {
+    return this.analyticsService.getDashboardAnalytics();
+  }
+
+  /** Get severity breakdown for pie chart. */
+  @Get('analytics/severity')
+  getSeverityBreakdown() {
+    return this.analyticsService.getSeverityBreakdown();
+  }
+
+  /** Get category breakdown for bar chart. */
+  @Get('analytics/category')
+  getCategoryBreakdown() {
+    return this.analyticsService.getCategoryBreakdown();
+  }
+
+  /** Get findings trend data for line chart. */
+  @Get('analytics/trends')
+  getFindingsTrend() {
+    return this.analyticsService.getFindingsTrend();
+  }
+
+  /** Get top risks ranked by severity and impact. */
+  @Get('analytics/top-risks')
+  getTopRisks(@Query('limit') limit?: string) {
+    const parsedLimit = limit ? parseInt(limit, 10) : undefined;
+    return this.analyticsService.getTopRisks(parsedLimit);
+  }
 
   /** List all findings with optional filters. */
   @Get()

@@ -9,6 +9,7 @@ import { LiveScanFeed } from "@/components/dashboard/LiveScanFeed";
 import { TriggerScanButton } from "@/components/dashboard/TriggerScanButton";
 import { AgentPermissions } from "@/components/dashboard/AgentPermissions";
 import { DashboardMetricsDisplay } from "@/components/dashboard/MetricsDisplay";
+import { FindingsChart } from "@/components/findings/FindingsChart";
 import { useMetrics } from "@/hooks/useMetrics";
 
 /**
@@ -98,6 +99,12 @@ export default function OverviewPage() {
           <DashboardMetricsDisplay metrics={metrics} />
         </div>
       )}
+
+      {/* Findings Analytics Dashboard */}
+      <div>
+        <h2 className="text-lg font-semibold mb-4">Findings Analytics</h2>
+        <FindingsChart />
+      </div>
 
       {/* Middle row — recent scans + live feed */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
