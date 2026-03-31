@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { api } from "@/lib/api";
+import { api, showErrorToast, showSuccessToast } from "@/lib/api";
 import { RiskScoreCard } from "@/components/dashboard/RiskScoreCard";
 import { FindingsSummary } from "@/components/dashboard/FindingsSummary";
 import { RecentScans } from "@/components/dashboard/RecentScans";
@@ -43,6 +43,47 @@ export default function OverviewPage() {
   const [data, setData] = useState<DashboardSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const { metrics, loading: metricsLoading } = useMetrics();
+
+  useEffect(() => {
+    if (!data) return;
+
+    const evaluateThresholds = async () => {
+      try {
+        const evaluation = await api.post<{
+          shouldTriggerScan: boolean;
+          reason: string;
+          settings?: { scanCooldownMinutes: number };
+        }>("alerts/evaluate", {
+          currentRiskScore: data.riskScore,
+          criticalFindings: data.severityCounts.critical,
+        });
+
+        if (!evaluation.shouldTriggerScan) return;
+
+        const cooldownMinutes = evaluation.settings?.scanCooldownMinutes ?? 30;
+        const lastTriggeredAt = Number(
+          window.localStorage.getItem("vaultguard:lastAutoScanAt") ?? 0
+        );
+        const cooldownMs = cooldownMinutes * 60 * 1000;
+
+        if (Date.now() - lastTriggeredAt < cooldownMs) return;
+
+        await api.post("scans/trigger");
+        window.localStorage.setItem(
+          "vaultguard:lastAutoScanAt",
+          String(Date.now())
+        );
+        showSuccessToast(
+          "Auto-scan triggered from alert threshold",
+          evaluation.reason
+        );
+      } catch (err) {
+        showErrorToast(err, "evaluate_alert_thresholds");
+      }
+    };
+
+    evaluateThresholds();
+  }, [data]);
 
   useEffect(() => {
     api

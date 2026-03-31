@@ -1,9 +1,19 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { api, showErrorToast, showSuccessToast } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Building2, Clock, Shield, ExternalLink } from "lucide-react";
+import { Building2, Clock, Shield, ExternalLink, Bell, Save } from "lucide-react";
+
+type AlertSettings = {
+  enabled: boolean;
+  riskThreshold: number;
+  criticalFindingsThreshold: number;
+  scanCooldownMinutes: number;
+  slackAlertsEnabled: boolean;
+};
 
 /**
  * WHY: Settings page shows org profile and scan configuration.
@@ -13,6 +23,40 @@ import { Building2, Clock, Shield, ExternalLink } from "lucide-react";
  */
 
 export default function SettingsPage() {
+  const [alerts, setAlerts] = useState<AlertSettings>({
+    enabled: true,
+    riskThreshold: 60,
+    criticalFindingsThreshold: 10,
+    scanCooldownMinutes: 30,
+    slackAlertsEnabled: false,
+  });
+  const [saving, setSaving] = useState(false);
+  const [loadingAlerts, setLoadingAlerts] = useState(true);
+
+  useEffect(() => {
+    api
+      .get<AlertSettings>("alerts/settings")
+      .then((data) => {
+        if (data) setAlerts(data);
+      })
+      .catch((err) => showErrorToast(err, "load_alert_settings"))
+      .finally(() => setLoadingAlerts(false));
+  }, []);
+
+  async function saveAlerts() {
+    setSaving(true);
+    try {
+      const data = await api.patch<AlertSettings>("alerts/settings", alerts);
+      setAlerts(data);
+      showSuccessToast("Alert settings saved", "thresholds_updated");
+      window.dispatchEvent(new CustomEvent("custom:alertSettingsUpdated"));
+    } catch (err) {
+      showErrorToast(err, "save_alert_settings");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -51,6 +95,146 @@ export default function SettingsPage() {
               </div>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Alerts & Thresholds */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Bell className="h-4 w-4" />
+            Alerts & Thresholds
+          </CardTitle>
+          <CardDescription>
+            Configure automatic alerting and risk-based scan triggers.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          {loadingAlerts ? (
+            <p className="text-sm text-muted-foreground">Loading alert settings...</p>
+          ) : (
+            <>
+              <div className="flex items-center justify-between rounded-md border p-3">
+                <div>
+                  <p className="text-sm font-medium">Enable Automated Alerts</p>
+                  <p className="text-xs text-muted-foreground">
+                    Trigger alerts and optional auto-scan when thresholds are exceeded.
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={alerts.enabled}
+                  onChange={(e) =>
+                    setAlerts((prev) => ({ ...prev, enabled: e.target.checked }))
+                  }
+                  className="h-4 w-4"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-xs text-muted-foreground">
+                    Risk Score Threshold ({alerts.riskThreshold})
+                  </label>
+                  <input
+                    type="range"
+                    min={0}
+                    max={100}
+                    value={alerts.riskThreshold}
+                    onChange={(e) =>
+                      setAlerts((prev) => ({
+                        ...prev,
+                        riskThreshold: Number(e.target.value),
+                      }))
+                    }
+                    className="w-full"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Auto-trigger scan when risk score is at or above this value.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs text-muted-foreground">
+                    Critical Findings Threshold ({alerts.criticalFindingsThreshold})
+                  </label>
+                  <input
+                    type="range"
+                    min={0}
+                    max={50}
+                    value={alerts.criticalFindingsThreshold}
+                    onChange={(e) =>
+                      setAlerts((prev) => ({
+                        ...prev,
+                        criticalFindingsThreshold: Number(e.target.value),
+                      }))
+                    }
+                    className="w-full"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Alert when critical findings count reaches this threshold.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-xs text-muted-foreground">
+                    Auto-Scan Cooldown (minutes)
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={1440}
+                    value={alerts.scanCooldownMinutes}
+                    onChange={(e) =>
+                      setAlerts((prev) => ({
+                        ...prev,
+                        scanCooldownMinutes: Number(e.target.value),
+                      }))
+                    }
+                    className="w-full rounded-md border px-3 py-2 text-sm"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between rounded-md border p-3 self-end">
+                  <div>
+                    <p className="text-sm font-medium">Slack Alert Notifications</p>
+                    <p className="text-xs text-muted-foreground">
+                      Send threshold alerts to your connected Slack workspace.
+                    </p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={alerts.slackAlertsEnabled}
+                    onChange={(e) =>
+                      setAlerts((prev) => ({
+                        ...prev,
+                        slackAlertsEnabled: e.target.checked,
+                      }))
+                    }
+                    className="h-4 w-4"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between gap-3 border-t pt-4">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Badge variant="outline">Risk {alerts.riskThreshold}+</Badge>
+                  <Badge variant="outline">Critical {alerts.criticalFindingsThreshold}+</Badge>
+                  <Badge variant="outline">Cooldown {alerts.scanCooldownMinutes}m</Badge>
+                </div>
+                <button
+                  onClick={saveAlerts}
+                  disabled={saving}
+                  className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground disabled:opacity-50"
+                >
+                  <Save className="h-4 w-4" />
+                  {saving ? "Saving..." : "Save Alert Settings"}
+                </button>
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
 

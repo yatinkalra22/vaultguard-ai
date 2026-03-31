@@ -19,6 +19,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
 import { IntegrationsModule } from './integrations/integrations.module';
 import { TelemetryModule } from './telemetry/telemetry.module';
 import { MetricsModule } from './metrics/metrics.module';
+import { AlertsModule } from './alerts/alerts.module';
 import { HealthController } from './health.controller';
 
 @Module({
@@ -70,6 +71,7 @@ import { HealthController } from './health.controller';
     IntegrationsModule,
     TelemetryModule,
     MetricsModule,
+    AlertsModule,
   ],
   controllers: [HealthController, AuthController],
   providers: [
