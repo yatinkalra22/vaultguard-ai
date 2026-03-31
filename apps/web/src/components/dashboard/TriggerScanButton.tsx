@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Play, Loader2 } from "lucide-react";
-import { api } from "@/lib/api";
+import { api, getErrorMessage } from "@/lib/api";
 
 /**
  * WHY: Manual scan trigger is the first demo action — "click Run Scan Now,
@@ -21,8 +21,7 @@ export function TriggerScanButton() {
     try {
       await api.post("scans/trigger");
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Scan failed";
-      setError(message);
+      setError(getErrorMessage(err, "Unable to run scan right now. Please try again."));
     } finally {
       setLoading(false);
     }

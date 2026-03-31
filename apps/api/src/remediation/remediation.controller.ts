@@ -6,6 +6,7 @@ import {
   Body,
   Request,
   UseGuards,
+  ForbiddenException,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -46,7 +47,7 @@ export class RemediationController {
   ) {
     const orgId = req.user.orgId;
     if (!orgId) {
-      return { error: 'No organization associated with this user' };
+      throw new ForbiddenException('No organization associated with this user');
     }
 
     return this.remediationService.requestRemediation({

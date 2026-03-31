@@ -3,6 +3,7 @@
 import { Component, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle } from "lucide-react";
+import { getErrorMessage } from "@/lib/api";
 
 /**
  * WHY: Error boundaries prevent a single component crash from taking down
@@ -39,7 +40,10 @@ export class ErrorBoundary extends Component<Props, State> {
           <AlertTriangle className="h-8 w-8 text-[var(--risk-high)] mb-3" />
           <h2 className="text-lg font-semibold mb-1">Something went wrong</h2>
           <p className="text-sm text-muted-foreground mb-4 max-w-md">
-            {this.state.error?.message ?? "An unexpected error occurred."}
+            {getErrorMessage(
+              this.state.error,
+              "We hit an unexpected issue. Please try again."
+            )}
           </p>
           <Button
             size="sm"

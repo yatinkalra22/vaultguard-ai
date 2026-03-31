@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, ShieldAlert, ShieldCheck, X } from "lucide-react";
-import { api } from "@/lib/api";
+import { api, getErrorMessage, isStepUpRequiredError } from "@/lib/api";
 
 interface Finding {
   id: string;
@@ -65,17 +65,14 @@ export function RemediateDialog({
 
       onSuccess();
     } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : "Failed to initiate remediation";
-
       // WHY: If the backend returns step_up_required, redirect to MFA.
       // After MFA completes, the user lands back on /findings to retry.
-      if (message.includes("step_up_required") || message.includes("Multi-factor")) {
+      if (isStepUpRequiredError(err)) {
         window.location.href = `/auth/step-up?returnTo=/findings`;
         return;
       }
 
-      setError(message);
+      setError(getErrorMessage(err, "Unable to start remediation. Please try again."));
     } finally {
       setLoading(false);
     }

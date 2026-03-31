@@ -9,6 +9,29 @@ import { auth0 } from "@/lib/auth0";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
+function normalizeProxyError(status: number, payload: unknown) {
+  const data = payload && typeof payload === "object" ? (payload as Record<string, unknown>) : {};
+
+  const message =
+    typeof data.message === "string"
+      ? data.message
+      : status >= 500
+        ? "Something went wrong on our side. Please try again shortly."
+        : "Request failed";
+
+  return {
+    statusCode: status,
+    message,
+    code:
+      typeof data.code === "string"
+        ? data.code
+        : typeof data.error === "string"
+          ? data.error
+          : undefined,
+    requestId: typeof data.requestId === "string" ? data.requestId : undefined,
+  };
+}
+
 async function proxy(
   req: NextRequest,
   pathSegments: string[],
@@ -16,7 +39,14 @@ async function proxy(
 ) {
   const session = await auth0.getSession();
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json(
+      {
+        statusCode: 401,
+        code: "unauthorized",
+        message: "Please sign in to continue.",
+      },
+      { status: 401 }
+    );
   }
 
   const path = pathSegments.join("/");
@@ -55,12 +85,44 @@ async function proxy(
       return new NextResponse(null, { status: res.status });
     }
 
-    const data = await res.json();
-    return NextResponse.json(data, { status: res.status });
+    if (contentType.includes("application/json")) {
+      const data = await res.json();
+      if (!res.ok) {
+        return NextResponse.json(normalizeProxyError(res.status, data), {
+          status: res.status,
+        });
+      }
+
+      return NextResponse.json(data, { status: res.status });
+    }
+
+    if (!res.ok) {
+      return NextResponse.json(
+        normalizeProxyError(res.status, {
+          message:
+            res.status >= 500
+              ? "Something went wrong on our side. Please try again shortly."
+              : "Request failed",
+        }),
+        { status: res.status }
+      );
+    }
+
+    const text = await res.text();
+    return new NextResponse(text, {
+      status: res.status,
+      headers: {
+        "Content-Type": contentType || "text/plain",
+      },
+    });
   } catch (error) {
     console.error(`Proxy error [${method} ${url}]:`, error);
     return NextResponse.json(
-      { error: "Backend unavailable" },
+      {
+        statusCode: 502,
+        code: "backend_unavailable",
+        message: "Service is temporarily unavailable. Please try again.",
+      },
       { status: 502 }
     );
   }

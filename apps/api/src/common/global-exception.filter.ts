@@ -41,8 +41,8 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
       response.status(status).json(
         typeof exceptionResponse === 'string'
-          ? { statusCode: status, message: exceptionResponse }
-          : exceptionResponse,
+          ? { statusCode: status, message: exceptionResponse, requestId }
+          : { ...exceptionResponse, requestId },
       );
       return;
     }
@@ -57,6 +57,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
       statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
       message: 'An internal error occurred. Please try again later.',
+      requestId,
     });
   }
 }
