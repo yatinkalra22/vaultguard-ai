@@ -7,6 +7,7 @@ import {
   Request,
   UseGuards,
   ForbiddenException,
+  BadRequestException,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -113,6 +114,12 @@ export class RemediationController {
       }
 
       const uniqueFindingIds = Array.from(new Set(body.findingIds));
+      if (uniqueFindingIds.length === 0) {
+        throw new BadRequestException({
+          code: ERROR_CODES.VALIDATION_FAILED,
+          message: 'At least one finding ID is required',
+        });
+      }
 
       const { data: findings } = await this.supabase.client
         .from('findings')
@@ -157,6 +164,20 @@ export class RemediationController {
           skipped_count: skipped.length,
         },
       });
+
+      if (eligibleFindingIds.length === 0) {
+        return {
+          batchId: `batch-${Date.now()}`,
+          requested: uniqueFindingIds.length,
+          skippedCount: skipped.length,
+          skipped,
+          queued: 0,
+          failedCount: 0,
+          failed: [],
+          status: 'skipped',
+          message: 'No eligible open findings to queue for remediation',
+        };
+      }
 
       const successful: string[] = [];
       const failed: Array<{ findingId: string; reason: string }> = [];
