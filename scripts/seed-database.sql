@@ -106,3 +106,65 @@ VALUES
     '{"findings_count": 5, "risk_score": 72}'
   )
 ON CONFLICT DO NOTHING;
+
+-- Insert sample alert settings
+INSERT INTO alert_settings (
+  org_id,
+  enabled,
+  risk_threshold,
+  critical_findings_threshold,
+  scan_cooldown_minutes,
+  slack_alerts_enabled,
+  alert_channel
+)
+VALUES (
+  '00000000-0000-0000-0000-000000000001',
+  TRUE,
+  60,
+  3,
+  30,
+  FALSE,
+  '#general'
+)
+ON CONFLICT (org_id) DO UPDATE
+SET
+  enabled = EXCLUDED.enabled,
+  risk_threshold = EXCLUDED.risk_threshold,
+  critical_findings_threshold = EXCLUDED.critical_findings_threshold,
+  scan_cooldown_minutes = EXCLUDED.scan_cooldown_minutes,
+  slack_alerts_enabled = EXCLUDED.slack_alerts_enabled,
+  alert_channel = EXCLUDED.alert_channel;
+
+-- Insert sample alert incidents
+INSERT INTO alert_incidents (
+  org_id,
+  reason,
+  status,
+  current_risk_score,
+  critical_findings,
+  duplicate_count,
+  created_at,
+  updated_at
+)
+VALUES
+  (
+    '00000000-0000-0000-0000-000000000001',
+    'risk_threshold_exceeded',
+    'open',
+    78,
+    2,
+    2,
+    NOW() - INTERVAL '45 minutes',
+    NOW() - INTERVAL '12 minutes'
+  ),
+  (
+    '00000000-0000-0000-0000-000000000001',
+    'critical_findings_threshold_exceeded',
+    'acknowledged',
+    69,
+    4,
+    1,
+    NOW() - INTERVAL '1 day',
+    NOW() - INTERVAL '20 hours'
+  )
+ON CONFLICT DO NOTHING;

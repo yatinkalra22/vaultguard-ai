@@ -28,6 +28,7 @@ cp .env.example apps/api/.env
 
 # 4. Set up the database
 # Run scripts/setup-database.sql in your Supabase SQL editor
+# If upgrading an existing environment, also run scripts/setup-alerting.sql
 # Optionally run scripts/seed-database.sql for test data
 
 # 5. Deploy FGA authorization model
@@ -123,6 +124,7 @@ exports.onExecutePostLogin = async (event, api) => {
 |--------|---------|
 | `scripts/setup-local.sh` | Full local setup (prereqs, deps, build check) |
 | `scripts/setup-database.sql` | Idempotent database schema (run in Supabase SQL Editor) |
+| `scripts/setup-alerting.sql` | Alerting tables/indexes migration for existing DBs |
 | `scripts/setup-retention.sql` | Data retention functions — run after setup-database.sql |
 | `scripts/seed-database.sql` | Test data for local development |
 | `scripts/setup-fga-model.sh` | Deploy Auth0 FGA authorization model |
