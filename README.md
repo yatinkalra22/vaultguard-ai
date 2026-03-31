@@ -85,6 +85,29 @@ pnpm dev
 # API: http://localhost:4000
 ```
 
+## Environment Checklist (Security-Critical)
+
+Use this checklist before demos, staging, or production deploys.
+
+### Always Required
+
+- [ ] `AUTH0_DOMAIN`, `AUTH0_AUDIENCE`, `AUTH0_CLIENT_ID`, `AUTH0_CLIENT_SECRET` are set for API + web
+- [ ] `AUTH0_BASE_URL` is set to the real web origin (no localhost fallback)
+- [ ] `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are set for API
+- [ ] `FRONTEND_URL` is set on API (required for production CORS)
+- [ ] `FGA_STORE_ID`, `FGA_CLIENT_ID`, `FGA_CLIENT_SECRET` are set when remediation approvals are enabled
+
+### Strict Security Flags
+
+- [ ] `ALLOW_INSECURE_DEV_AUTH` is **unset** (or `false`) outside local development
+- [ ] `ENABLE_DEMO_ENDPOINTS` is **unset** (or `false`) outside demo environments
+
+### Local Development Defaults
+
+- [ ] If running locally without full Auth0/FGA setup, set `NODE_ENV=development`
+- [ ] Use `ALLOW_INSECURE_DEV_AUTH=true` only for local dev troubleshooting
+- [ ] Keep `ENABLE_DEMO_ENDPOINTS=true` only when you explicitly need demo seed/reset routes
+
 ## Project Structure
 
 ```
