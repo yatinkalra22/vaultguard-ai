@@ -60,7 +60,7 @@ export function LiveScanFeed() {
     });
   }
 
-  function eventBadge(type: string) {
+  function eventBadge(type: ScanEvent["type"]) {
     switch (type) {
       case "scan.started":
         return (

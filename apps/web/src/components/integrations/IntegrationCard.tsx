@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Loader2, ExternalLink } from "lucide-react";
-import { api } from "@/lib/api";
+import { api, showErrorToast } from "@/lib/api";
 
 interface Integration {
   id: string;
@@ -78,7 +78,8 @@ export function IntegrationCard({
         `integrations/${provider}/connect`,
       );
       window.location.href = url;
-    } catch {
+    } catch (err: unknown) {
+      showErrorToast(err, `${provider}_connect`);
       setLoading(false);
     }
   }
@@ -89,8 +90,8 @@ export function IntegrationCard({
     try {
       await api.del(`integrations/${integration.id}`);
       onUpdate();
-    } catch {
-      // Refetch on failure
+    } catch (err: unknown) {
+      showErrorToast(err, `${provider}_disconnect`);
     } finally {
       setLoading(false);
     }

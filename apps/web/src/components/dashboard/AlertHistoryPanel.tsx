@@ -36,7 +36,7 @@ export function AlertHistoryPanel() {
     try {
       const data = await api.get<AlertIncident[]>("alerts/history");
       setIncidents(data);
-    } catch (err) {
+    } catch (err: unknown) {
       showErrorToast(err, "load_alert_history");
     } finally {
       setLoading(false);
@@ -64,7 +64,7 @@ export function AlertHistoryPanel() {
       await api.patch(`alerts/history/${id}/acknowledge`);
       showSuccessToast("Alert acknowledged", "alert_acknowledged");
       await fetchHistory();
-    } catch (err) {
+    } catch (err: unknown) {
       showErrorToast(err, "acknowledge_alert");
     }
   }

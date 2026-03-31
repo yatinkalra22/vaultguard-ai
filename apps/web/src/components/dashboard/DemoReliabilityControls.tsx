@@ -14,7 +14,7 @@ export function DemoReliabilityControls() {
       await api.post("dashboard/demo-seed");
       showSuccessToast("Demo data seeded", "demo_seeded");
       window.dispatchEvent(new CustomEvent("custom:alertSettingsUpdated"));
-    } catch (err) {
+    } catch (err: unknown) {
       showErrorToast(err, "demo_seed");
     } finally {
       setLoading(null);
@@ -27,7 +27,7 @@ export function DemoReliabilityControls() {
       await api.post("dashboard/demo-reset");
       showSuccessToast("Demo data reset", "demo_reset");
       window.dispatchEvent(new CustomEvent("custom:alertSettingsUpdated"));
-    } catch (err) {
+    } catch (err: unknown) {
       showErrorToast(err, "demo_reset");
     } finally {
       setLoading(null);

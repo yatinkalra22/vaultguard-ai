@@ -14,7 +14,7 @@ type TimelineEvent = {
   timestamp: string;
 };
 
-const typeColor: Record<string, string> = {
+const typeColor: Record<TimelineEvent["type"], string> = {
   scan: "bg-blue-100 text-blue-700 border-0",
   alert: "bg-red-100 text-red-700 border-0",
   audit: "bg-slate-100 text-slate-700 border-0",

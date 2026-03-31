@@ -18,7 +18,7 @@ import {
 } from 'recharts';
 import { AlertTriangle, TrendingUp } from 'lucide-react';
 import { RemediationBulkActions } from './RemediationBulkActions';
-import { api } from '@/lib/api';
+import { api, showErrorToast } from '@/lib/api';
 
 interface FindingsAnalytics {
   severityBreakdown: {
@@ -73,8 +73,8 @@ export function FindingsChart() {
         ]);
         setAnalytics(dashboardAnalytics);
         setOpenFindings(findings);
-      } catch (error) {
-        console.error('Failed to fetch analytics:', error);
+      } catch (error: unknown) {
+        showErrorToast(error, 'Failed to fetch analytics');
       } finally {
         setLoading(false);
       }
