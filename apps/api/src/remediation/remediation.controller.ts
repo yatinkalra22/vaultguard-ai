@@ -13,6 +13,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { StepUpGuard } from '../auth/step-up.guard';
 import { FgaGuard } from '../auth/fga.guard';
 import { CreateRemediationDto } from './dto/create-remediation.dto';
+import { BatchApproveRemediationDto } from './dto/batch-approve-remediation.dto';
 import { RemediationService } from './remediation.service';
 import { SupabaseService } from '../common/supabase.service';
 import { ERROR_CODES } from '../common/error-codes';
@@ -100,7 +101,7 @@ export class RemediationController {
     @Throttle({ default: { ttl: 60_000, limit: 10 } })
     @UseGuards(StepUpGuard, FgaGuard)
     async batchApproveRemediations(
-      @Body() body: { findingIds: string[] },
+      @Body() body: BatchApproveRemediationDto,
       @Request() req: { user: { sub: string; orgId?: string } },
     ) {
       const orgId = req.user.orgId;
@@ -111,20 +112,7 @@ export class RemediationController {
         });
       }
 
-      if (!body.findingIds || body.findingIds.length === 0) {
-        throw new ForbiddenException({
-          code: ERROR_CODES.VALIDATION_FAILED,
-          message: 'At least one finding ID required',
-        });
-      }
-
       const uniqueFindingIds = Array.from(new Set(body.findingIds));
-      if (uniqueFindingIds.length > 25) {
-        throw new ForbiddenException({
-          code: ERROR_CODES.VALIDATION_FAILED,
-          message: 'Batch remediation limit is 25 findings per request',
-        });
-      }
 
       // Log batch approval action
       await this.supabase.client.from('audit_logs').insert({
