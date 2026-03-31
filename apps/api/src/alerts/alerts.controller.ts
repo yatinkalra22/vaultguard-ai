@@ -27,14 +27,14 @@ export class AlertsController {
   ) {}
 
   @Get('settings')
-  getSettings(@Request() req: { user: { orgId?: string } }) {
+  async getSettings(@Request() req: { user: { orgId?: string } }) {
     const orgId = req.user.orgId;
     if (!orgId) return null;
     return this.alertsService.getSettings(orgId);
   }
 
   @Patch('settings')
-  updateSettings(
+  async updateSettings(
     @Request() req: { user: { orgId?: string } },
     @Body() body: Partial<AlertSettings>,
   ) {
@@ -51,7 +51,7 @@ export class AlertsController {
     const orgId = req.user.orgId;
     if (!orgId) return { error: 'No organization associated with this user' };
 
-    const evaluation: ThresholdEvaluation = this.alertsService.evaluate(
+    const evaluation: ThresholdEvaluation = await this.alertsService.evaluate(
       orgId,
       body.currentRiskScore ?? 0,
       body.criticalFindings ?? 0,
@@ -61,7 +61,7 @@ export class AlertsController {
       return evaluation;
     }
 
-    const { incident, deduplicated } = this.alertsService.recordIncident(
+    const { incident, deduplicated } = await this.alertsService.recordIncident(
       orgId,
       evaluation.reason,
       body.currentRiskScore ?? 0,
@@ -105,7 +105,7 @@ export class AlertsController {
   }
 
   @Get('history')
-  getHistory(@Request() req: { user: { orgId?: string } }) {
+  async getHistory(@Request() req: { user: { orgId?: string } }) {
     const orgId = req.user.orgId;
     if (!orgId) return [];
     return this.alertsService.listHistory(orgId);
@@ -119,7 +119,11 @@ export class AlertsController {
     const orgId = req.user.orgId;
     if (!orgId) return { error: 'No organization associated with this user' };
 
-    const incident = this.alertsService.acknowledgeIncident(orgId, id, req.user.sub);
+    const incident = await this.alertsService.acknowledgeIncident(
+      orgId,
+      id,
+      req.user.sub,
+    );
     if (!incident) return { error: 'Alert incident not found' };
 
     await this.auditService.log({
