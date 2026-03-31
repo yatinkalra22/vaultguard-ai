@@ -51,10 +51,31 @@ async function bootstrap() {
   // In production, FRONTEND_URL is required — no localhost fallback.
   const isProduction = process.env.NODE_ENV === 'production';
   const frontendUrl = process.env.FRONTEND_URL;
+  const auth0BaseUrl = process.env.AUTH0_BASE_URL;
+  const allowInsecureDevAuth = process.env.ALLOW_INSECURE_DEV_AUTH === 'true';
+  const enableDemoEndpoints = process.env.ENABLE_DEMO_ENDPOINTS === 'true';
 
   if (isProduction && !frontendUrl) {
     throw new Error(
       'FRONTEND_URL environment variable is required in production for CORS',
+    );
+  }
+
+  if (isProduction && !auth0BaseUrl) {
+    throw new Error(
+      'AUTH0_BASE_URL environment variable is required in production',
+    );
+  }
+
+  if (isProduction && allowInsecureDevAuth) {
+    throw new Error(
+      'ALLOW_INSECURE_DEV_AUTH must be false in production',
+    );
+  }
+
+  if (isProduction && enableDemoEndpoints) {
+    throw new Error(
+      'ENABLE_DEMO_ENDPOINTS must be false in production',
     );
   }
 

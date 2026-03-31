@@ -51,6 +51,7 @@ Connect → Scan → Analyze → CIBA Approve → Execute → Audit
 - **Plain English recommendations** — Claude Sonnet generates specific, actionable advice per finding
 - **Step-up authentication** — MFA required before any remediation (prevents session hijacking)
 - **CIBA remediation** — One-click remediate → email approval → auto-execute
+- **Safe remediation scope** — Only supported auto-remediation actions execute; unsupported actions fail closed
 - **Real-time dashboard** — SSE-powered live scan feed
 - **Full audit trail** — Immutable log of every scan, approval, and action
 - **Daily auto-scan** — Cron scheduler runs scans at midnight UTC
@@ -101,12 +102,31 @@ Use this checklist before demos, staging, or production deploys.
 
 - [ ] `ALLOW_INSECURE_DEV_AUTH` is **unset** (or `false`) outside local development
 - [ ] `ENABLE_DEMO_ENDPOINTS` is **unset** (or `false`) outside demo environments
+- [ ] Production startup should fail if either flag is `true`
 
 ### Local Development Defaults
 
 - [ ] If running locally without full Auth0/FGA setup, set `NODE_ENV=development`
 - [ ] Use `ALLOW_INSECURE_DEV_AUTH=true` only for local dev troubleshooting
 - [ ] Keep `ENABLE_DEMO_ENDPOINTS=true` only when you explicitly need demo seed/reset routes
+
+### Secure Defaults Snippet
+
+Copy these defaults into environment files unless you explicitly need local/demo overrides:
+
+```env
+# Security defaults (recommended for shared envs)
+ALLOW_INSECURE_DEV_AUTH=false
+ENABLE_DEMO_ENDPOINTS=false
+```
+
+For local-only troubleshooting, you may temporarily set:
+
+```env
+NODE_ENV=development
+ALLOW_INSECURE_DEV_AUTH=true
+ENABLE_DEMO_ENDPOINTS=true
+```
 
 ## Project Structure
 

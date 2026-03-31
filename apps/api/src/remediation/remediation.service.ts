@@ -12,7 +12,6 @@ import { GithubService } from '../github/github.service';
 const ACTION_DESCRIPTIONS: Record<string, string> = {
   revoke_slack_user: 'Deactivate Slack user',
   remove_github_member: 'Remove GitHub org member',
-  flag_app: 'Flag app for review',
 };
 
 interface RemediationRow {
@@ -40,10 +39,6 @@ function resolveExpectedAction(
 
   if (provider === 'github' && type === 'over_permissioned') {
     return 'remove_github_member';
-  }
-
-  if (type === 'shadow_app') {
-    return 'flag_app';
   }
 
   return null;
@@ -211,6 +206,10 @@ export class RemediationService {
         const targetUserId = toStringOrEmpty(rem.target_entity.id);
         const teamId = toStringOrEmpty(rem.target_entity.team_id);
 
+        if (!targetUserId || !teamId) {
+          throw new Error('Missing Slack remediation target details');
+        }
+
         await this.slackService.deactivateUser(
           rem.requested_by,
           targetUserId,
@@ -223,11 +222,17 @@ export class RemediationService {
           '';
         const username = toStringOrEmpty(rem.target_entity.login);
 
+        if (!org || !username) {
+          throw new Error('Missing GitHub remediation target details');
+        }
+
         await this.githubService.removeOrgMember(
           rem.requested_by,
           org,
           username,
         );
+      } else {
+        throw new Error(`Unsupported remediation action: ${rem.action}`);
       }
 
       // Update records

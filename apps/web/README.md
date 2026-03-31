@@ -30,6 +30,13 @@ Required keys:
 - AUTH0_AUDIENCE
 - NEXT_PUBLIC_API_URL
 
+## Security Checklist
+
+- `AUTH0_BASE_URL` must match the deployed web origin (no localhost in shared envs).
+- API now rejects unauthenticated telemetry, so web telemetry is routed via `/api/proxy/telemetry`.
+- Keep `ALLOW_INSECURE_DEV_AUTH` disabled outside local development.
+- Keep `ENABLE_DEMO_ENDPOINTS` disabled outside explicit demo environments.
+
 ## Key Routes
 
 - Dashboard: / 

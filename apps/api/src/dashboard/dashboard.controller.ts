@@ -220,6 +220,7 @@ export class DashboardController {
     }
 
     const orgId = req.user?.orgId ?? req.user?.org_id ?? 'default';
+    const actor = 'demo-reset';
 
     await Promise.all([
       this.supabase.client
@@ -232,11 +233,15 @@ export class DashboardController {
         .delete()
         .eq('org_id', orgId)
         .in('reason', ['risk_threshold_exceeded']),
-      this.supabase.client
-        .from('audit_logs')
-        .delete()
-        .eq('org_id', orgId)
-        .in('action', ['demo.seeded']),
+    ]);
+
+    await this.supabase.client.from('audit_logs').insert([
+      {
+        org_id: orgId,
+        actor,
+        action: 'demo.reset',
+        target: { mode: 'reliable-demo' },
+      },
     ]);
 
     return { ok: true, message: 'Demo data reset' };
