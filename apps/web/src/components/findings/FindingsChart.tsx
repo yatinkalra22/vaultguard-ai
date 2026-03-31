@@ -17,6 +17,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { AlertTriangle, TrendingUp } from 'lucide-react';
+import { RemediationBulkActions } from './RemediationBulkActions';
 import { api } from '@/lib/api';
 
 interface FindingsAnalytics {
@@ -103,8 +104,38 @@ export function FindingsChart() {
     count: value,
   }));
 
+    // Mock findings data for bulk actions
+    const mockFindings = [
+      {
+        id: 'finding-1',
+        title: analytics.topRisks[0]?.title || 'Critical Finding',
+        severity: 'critical',
+        category: 'IAM & Access',
+      },
+      {
+        id: 'finding-2',
+        title: analytics.topRisks[1]?.title || 'High Finding',
+        severity: 'high',
+        category: 'Data Exposure',
+      },
+      ...Array.from({ length: 3 }, (_, i) => ({
+        id: `finding-${i + 3}`,
+        title: `Additional Finding ${i + 3}`,
+        severity: i % 2 === 0 ? 'high' : 'medium',
+        category: 'Configuration',
+      })),
+    ];
+
   return (
     <div className="space-y-8">
+      {/* Remediation Bulk Actions Panel */}
+      <RemediationBulkActions
+        findings={mockFindings}
+        onRemediateBatch={(findingIds) => {
+          console.log('Remediating:', findingIds);
+        }}
+      />
+
       {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Severity Breakdown Pie Chart */}
@@ -229,9 +260,9 @@ export function FindingsChart() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     {risk.title}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span
+                         className={`px-3 py-1 rounded-full text-xs font-semibold ${
                         risk.severity === 'critical'
                           ? 'bg-red-100 text-red-800'
                           : risk.severity === 'high'
@@ -241,7 +272,7 @@ export function FindingsChart() {
                     >
                       {risk.severity.charAt(0).toUpperCase() + risk.severity.slice(1)}
                     </span>
-                  </td>
+                    </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                     {risk.affectedResources}
                   </td>
