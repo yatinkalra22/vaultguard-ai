@@ -1,5 +1,10 @@
 # VaultGuard AI — Setup Guide
 
+This document is the canonical setup guide for local development and provider onboarding.
+
+For deployment and release operations, use [deployment.md](./deployment.md).
+For a complete environment variable matrix, use [ENV_VARS_REFERENCE.md](./ENV_VARS_REFERENCE.md).
+
 ## Prerequisites
 
 - Node.js 20+ (see `.nvmrc`)
@@ -24,11 +29,18 @@ cd vaultguard-ai
 # 3. Set up environment variables
 cp .env.example apps/web/.env.local
 cp .env.example apps/api/.env
-# Edit both files with your Auth0, Supabase, and Anthropic values
+# Edit both files (see docs/ENV_VARS_REFERENCE.md for full key descriptions)
+# Minimum required values:
+#   web: AUTH0_SECRET, AUTH0_BASE_URL, AUTH0_ISSUER_BASE_URL,
+#        AUTH0_CLIENT_ID, AUTH0_CLIENT_SECRET, AUTH0_AUDIENCE, NEXT_PUBLIC_API_URL
+#   api: AUTH0_DOMAIN, AUTH0_AUDIENCE, AUTH0_CLIENT_ID, AUTH0_CLIENT_SECRET,
+#        SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, ANTHROPIC_API_KEY,
+#        FRONTEND_URL, AUTH0_BASE_URL
 
 # 4. Set up the database
 # Run scripts/setup-database.sql in your Supabase SQL editor
-# If upgrading an existing environment, also run scripts/setup-alerting.sql
+# Then run scripts/setup-retention.sql (required for retention jobs)
+# If upgrading an existing environment with pre-alert schema, also run scripts/setup-alerting.sql
 # Optionally run scripts/seed-database.sql for test data
 
 # 5. Deploy FGA authorization model
@@ -39,6 +51,30 @@ pnpm dev
 # Web: http://localhost:3000
 # API: http://localhost:4000
 ```
+
+## Setup Decision Path
+
+- Fresh install:
+  - Run `scripts/setup-database.sql`
+  - Run `scripts/setup-retention.sql`
+  - Optionally run `scripts/seed-database.sql`
+- Existing install upgrade:
+  - Run `scripts/setup-database.sql`
+  - Run `scripts/setup-alerting.sql`
+  - Run `scripts/setup-retention.sql`
+
+## Security-Sensitive Local Flags
+
+- `ALLOW_INSECURE_DEV_AUTH=true` and `ENABLE_DEMO_ENDPOINTS=true` are local troubleshooting/demo toggles only.
+- Never enable either flag in shared, staging, or production environments.
+- Production startup is intentionally blocked if either flag is `true`.
+
+## Terminology
+
+- Connected Accounts: the one-time OAuth consent flow (Slack/GitHub).
+- Token Vault: where provider refresh tokens are stored and exchanged for access tokens.
+- CIBA: human approval step for remediation before any high-impact action executes.
+- Remediation: a requested fix action that requires both authorization and approval.
 
 ## Auth0 Tenant Configuration
 
@@ -70,6 +106,7 @@ pnpm dev
 ### 6. Enable CIBA
 - Applications → VaultGuard Web → Advanced Settings → Grant Types
 - Enable: `urn:openid:params:grant-type:ciba`
+- CIBA (Client-Initiated Backchannel Authentication) is used as explicit human approval for remediation actions.
 
 ### 7. Enable MFA + Step-Up Authentication
 - Security → Multi-factor Auth → Enable at least one factor (OTP recommended)
@@ -124,8 +161,8 @@ exports.onExecutePostLogin = async (event, api) => {
 |--------|---------|
 | `scripts/setup-local.sh` | Full local setup (prereqs, deps, build check) |
 | `scripts/setup-database.sql` | Idempotent database schema (run in Supabase SQL Editor) |
-| `scripts/setup-alerting.sql` | Alerting tables/indexes migration for existing DBs |
-| `scripts/setup-retention.sql` | Data retention functions — run after setup-database.sql |
+| `scripts/setup-alerting.sql` | Alerting migration for older databases (upgrade path) |
+| `scripts/setup-retention.sql` | Required retention functions/procedures (run after setup-database.sql) |
 | `scripts/seed-database.sql` | Test data for local development |
 | `scripts/setup-fga-model.sh` | Deploy Auth0 FGA authorization model |
 | `scripts/deploy-web.sh` | Deploy frontend to Vercel (`--prod` for production) |
@@ -133,23 +170,4 @@ exports.onExecutePostLogin = async (event, api) => {
 
 ## Deployment
 
-All deployments are handled via scripts:
-
-```bash
-# Deploy frontend to Vercel (preview)
-./scripts/deploy-web.sh
-
-# Deploy frontend to Vercel (production)
-./scripts/deploy-web.sh --prod
-
-# Deploy backend to Railway
-./scripts/deploy-api.sh
-```
-
-### Post-Deployment Checklist
-
-1. Update Auth0 callback URLs with production domains
-2. Set `AUTH0_BASE_URL` in Vercel to the production URL
-3. Set `NEXT_PUBLIC_API_URL` in Vercel to the Railway backend URL
-4. Set `FRONTEND_URL` in Railway to the Vercel production URL
-5. Add Redis add-on in Railway: `railway add redis`
+Deployment and post-deploy verification are maintained in [deployment.md](./deployment.md).

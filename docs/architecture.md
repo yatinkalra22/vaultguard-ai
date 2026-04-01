@@ -4,10 +4,18 @@
 
 VaultGuard AI is an AI-powered SaaS access governance agent. A security admin connects their Slack workspace and GitHub organization. VaultGuard's AI agent continuously scans both platforms, detects access anomalies (stale users, over-permissioned bots, shadow apps), and asks the admin for approval via CIBA before taking any remediation action.
 
+Terminology used in this document:
+- Connected Accounts: the user consent flow to connect provider identities.
+- Token Vault: secure provider token storage and token exchange boundary.
+- Remediation: an approved action request to reduce risk on a specific finding.
+- Safe remediation: only explicitly supported action types execute; unsupported actions fail closed.
+
 ## Architecture Governance
 
+- Documentation index: `docs/README.md`
 - Engineering and architecture standards: `docs/ARCHITECTURE_STANDARDS.md`
 - Architecture Decision Records (ADR): `docs/adr/`
+- Deployment and runtime operations: `docs/deployment.md`
 
 ## System Architecture
 
@@ -102,7 +110,7 @@ See `scripts/setup-database.sql` for the full schema. Key tables:
 | `findings` | 30 days | Only if status is `remediated` or `ignored` |
 | `remediations` | Kept with finding | Cascades with parent finding |
 
-Cleanup runs daily at 3 AM UTC via `AuditRetentionService`. SQL functions in `scripts/setup-retention.sql` are available for `pg_cron` as an alternative.
+Cleanup runs daily at 3 AM UTC via `AuditRetentionService`. `scripts/setup-retention.sql` is required setup for retention procedures and can also be used with `pg_cron` as an alternative scheduler integration.
 
 ## Monorepo Structure
 

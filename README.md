@@ -80,57 +80,24 @@ cp .env.example apps/api/.env
 # Deploy FGA authorization model
 ./scripts/setup-fga-model.sh
 
-# Start development
+# Start development (web + api)
 pnpm dev
 # Web: http://localhost:3000
 # API: http://localhost:4000
 ```
 
+For full setup details and provider configuration, use [docs/setup.md](docs/setup.md).
+
 ## Environment Checklist (Security-Critical)
 
 Use this checklist before demos, staging, or production deploys.
 
-### Always Required
-
-- [ ] `AUTH0_DOMAIN`, `AUTH0_AUDIENCE`, `AUTH0_CLIENT_ID`, `AUTH0_CLIENT_SECRET` are set for API + web
-- [ ] `AUTH0_BASE_URL` is set to the real web origin (no localhost fallback)
-- [ ] `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are set for API
-- [ ] `FRONTEND_URL` is set on API (required for production CORS)
-- [ ] `FGA_STORE_ID`, `FGA_CLIENT_ID`, `FGA_CLIENT_SECRET` are set when remediation approvals are enabled
-
-### Strict Security Flags
-
-- [ ] `ALLOW_INSECURE_DEV_AUTH` is **unset** (or `false`) outside local development
-- [ ] `ENABLE_DEMO_ENDPOINTS` is **unset** (or `false`) outside demo environments
-- [ ] Production startup should fail if either flag is `true`
-
-### API Reliability
-
-- [ ] Batch remediation requests support `x-idempotency-key` to prevent duplicate queues on retries/double-submits
-
-### Local Development Defaults
-
-- [ ] If running locally without full Auth0/FGA setup, set `NODE_ENV=development`
-- [ ] Use `ALLOW_INSECURE_DEV_AUTH=true` only for local dev troubleshooting
-- [ ] Keep `ENABLE_DEMO_ENDPOINTS=true` only when you explicitly need demo seed/reset routes
-
-### Secure Defaults Snippet
-
-Copy these defaults into environment files unless you explicitly need local/demo overrides:
-
-```env
-# Security defaults (recommended for shared envs)
-ALLOW_INSECURE_DEV_AUTH=false
-ENABLE_DEMO_ENDPOINTS=false
-```
-
-For local-only troubleshooting, you may temporarily set:
-
-```env
-NODE_ENV=development
-ALLOW_INSECURE_DEV_AUTH=true
-ENABLE_DEMO_ENDPOINTS=true
-```
+- [ ] Required web and API keys are populated (see [docs/ENV_VARS_REFERENCE.md](docs/ENV_VARS_REFERENCE.md)).
+- [ ] `AUTH0_BASE_URL` and `FRONTEND_URL` match the deployed web origin.
+- [ ] `NEXT_PUBLIC_API_URL` points to the active backend deployment.
+- [ ] `ALLOW_INSECURE_DEV_AUTH=false` outside local development.
+- [ ] `ENABLE_DEMO_ENDPOINTS=false` outside explicit demo/local contexts.
+- [ ] Remediation retries use `x-idempotency-key` for duplicate protection.
 
 ## Project Structure
 
@@ -166,15 +133,63 @@ vaultguard-ai/
 │   ├── deploy-web.sh       # Vercel deployment
 │   └── deploy-api.sh       # Railway deployment
 ├── docs/
-│   ├── architecture.md     # System design + Auth0 feature map
-│   └── setup.md            # Full setup guide
+│   ├── README.md                 # Documentation index and maintenance map
+│   ├── setup.md                  # Setup guide
+│   ├── deployment.md             # Deployment and operations guide
+│   ├── architecture.md           # System architecture and data flow
+│   ├── ARCHITECTURE_STANDARDS.md # Engineering standards
+│   ├── SECURITY_AUDIT.md         # Security hardening record
+│   ├── PLAN.md                   # Historical implementation plan
+│   ├── blog-post.md              # Hackathon blog post draft
+│   └── adr/                      # Architecture decision records
 └── .env.example            # Environment variable template
 ```
 
 ## Documentation
 
-- [Architecture](docs/architecture.md) — System design, Auth0 feature map, Token Vault flow, database schema
-- [Setup Guide](docs/setup.md) — Auth0 tenant config, Supabase, Slack/GitHub apps, deployment
+### Getting Started
+
+- [Documentation Index](docs/README.md) — complete map of docs and maintenance expectations
+- [Setup Guide](docs/setup.md) — local setup, provider onboarding, and migration ordering
+- [Environment Variables Reference](docs/ENV_VARS_REFERENCE.md) — canonical key descriptions and requiredness
+- [Troubleshooting](docs/TROUBLESHOOTING.md) — high-signal diagnosis for setup/auth/deploy issues
+
+### Development
+
+- [Contributing Guide](CONTRIBUTING.md) — branching, commit style, PR checklist, and CI expectations
+- [Architecture](docs/architecture.md) — system design, trust boundaries, and module map
+- [Architecture Standards](docs/ARCHITECTURE_STANDARDS.md) — coding/security/testing/delivery rules
+- [API Reference](docs/API_REFERENCE.md) — endpoint groups, error envelope, and auth expectations
+- [Testing Guide](docs/TESTING.md) — current test commands and validation workflow
+
+### Deployment and Operations
+
+- [Deployment Guide](docs/deployment.md) — preflight checks, rollout order, rollback, and verification
+- [Operations Runbook](docs/OPERATIONS_RUNBOOK.md) — release triage and incident response baseline
+- [Security Audit](docs/SECURITY_AUDIT.md) — security hardening record and remediation history
+
+### Governance and History
+
+- [ADR Guidelines](docs/adr/README.md) — architecture decision process
+- [ADR Template](docs/adr/0000-template.md) — starting point for new ADRs
+- [Implementation Plan (Historical)](docs/PLAN.md) — historical implementation record
+- [Blog Post Draft](docs/blog-post.md) — hackathon narrative draft
+
+### Where Do I...?
+
+| Task | Canonical doc |
+|---|---|
+| Set up local development | [docs/setup.md](docs/setup.md) |
+| Configure environment variables correctly | [docs/ENV_VARS_REFERENCE.md](docs/ENV_VARS_REFERENCE.md) |
+| Debug login, CORS, or provider integration failures | [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) |
+| Understand architecture boundaries | [docs/architecture.md](docs/architecture.md) |
+| Follow coding/security/testing standards | [docs/ARCHITECTURE_STANDARDS.md](docs/ARCHITECTURE_STANDARDS.md) |
+| Find backend endpoints and error codes | [docs/API_REFERENCE.md](docs/API_REFERENCE.md) |
+| Run quality checks and tests | [docs/TESTING.md](docs/TESTING.md) |
+| Prepare and execute deployments | [docs/deployment.md](docs/deployment.md) |
+| Handle release incidents and rollback | [docs/OPERATIONS_RUNBOOK.md](docs/OPERATIONS_RUNBOOK.md) |
+| Propose a non-trivial architecture change | [docs/adr/README.md](docs/adr/README.md) |
+| Review historical implementation context | [docs/PLAN.md](docs/PLAN.md) |
 
 ## Security Architecture
 
