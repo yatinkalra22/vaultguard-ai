@@ -68,10 +68,10 @@ cd vaultguard-ai
 # Run setup (checks prereqs, installs deps, builds)
 ./scripts/setup-local.sh
 
-# Configure environment variables
-cp .env.example apps/web/.env.local
-cp .env.example apps/api/.env
-# Edit both files with your Auth0, Supabase, and Anthropic values
+# Configure environment variables (each app has its own .env.example)
+cp apps/web/.env.example apps/web/.env.local
+cp apps/api/.env.example apps/api/.env
+# Fill in your keys — see docs/FRONTEND_ENV_SETUP.md & docs/BACKEND_ENV_SETUP.md
 
 # Set up database (run in Supabase SQL Editor)
 # scripts/setup-database.sql    — schema
@@ -142,7 +142,8 @@ vaultguard-ai/
 │   ├── PLAN.md                   # Historical implementation plan
 │   ├── blog-post.md              # Hackathon blog post draft
 │   └── adr/                      # Architecture decision records
-└── .env.example            # Environment variable template
+├── apps/web/.env.example   # Frontend env template
+└── apps/api/.env.example   # Backend env template
 ```
 
 ## Documentation

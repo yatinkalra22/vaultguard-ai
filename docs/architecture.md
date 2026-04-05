@@ -125,7 +125,8 @@ vaultguard-ai/
 ├── scripts/          # Deployment and setup scripts
 ├── turbo.json
 ├── package.json
-└── .env.example
+├── apps/web/.env.example     # Frontend env template
+└── apps/api/.env.example     # Backend env template
 ```
 
 ## CI/CD

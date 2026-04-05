@@ -1,51 +1,67 @@
 # VaultGuard AI — Environment Variables Reference
 
-Canonical source of variable names: `.env.example`.
+Each app has its own `.env.example` with only the variables it needs:
 
-Use this document for requiredness and runtime intent.
+- **Frontend:** `apps/web/.env.example` → copy to `apps/web/.env.local`
+- **Backend:** `apps/api/.env.example` → copy to `apps/api/.env`
+
+Step-by-step setup guides: [FRONTEND_ENV_SETUP.md](./FRONTEND_ENV_SETUP.md) | [BACKEND_ENV_SETUP.md](./BACKEND_ENV_SETUP.md)
 
 ## Frontend (`apps/web/.env.local`)
 
-| Variable | Required | Environments | Description |
-|---|---|---|---|
-| `AUTH0_SECRET` | Yes | local, staging, production | Session secret for Auth0 Next.js SDK. |
-| `AUTH0_BASE_URL` | Yes | local, staging, production | Public web origin used for login/logout callback construction. |
-| `AUTH0_ISSUER_BASE_URL` | Yes | local, staging, production | Auth0 tenant issuer URL. |
-| `AUTH0_DOMAIN` | Optional | local, staging, production | Optional domain alias for compatibility paths. |
-| `AUTH0_CLIENT_ID` | Yes | local, staging, production | Auth0 application client ID. |
-| `AUTH0_CLIENT_SECRET` | Yes | local, staging, production | Auth0 application client secret. |
-| `AUTH0_AUDIENCE` | Yes | local, staging, production | API audience used for access tokens. |
-| `NEXT_PUBLIC_API_URL` | Yes | local, staging, production | Backend base URL used by frontend proxy/client. |
+| Variable | Required | Description |
+|---|---|---|
+| `AUTH0_SECRET` | Yes | Session encryption secret. Generate with `openssl rand -hex 32`. |
+| `AUTH0_BASE_URL` | Yes | Public web origin (e.g., `http://localhost:3000`). |
+| `AUTH0_ISSUER_BASE_URL` | Yes | Auth0 tenant URL with `https://` prefix. |
+| `AUTH0_DOMAIN` | Optional | Auth0 domain without `https://`. Used as fallback. |
+| `AUTH0_CLIENT_ID` | Yes | Auth0 application client ID. |
+| `AUTH0_CLIENT_SECRET` | Yes | Auth0 application client secret. |
+| `AUTH0_AUDIENCE` | Yes | API audience for access tokens (`https://api.vaultguard.ai`). |
+| `NEXT_PUBLIC_API_URL` | Yes | Backend API URL (e.g., `http://localhost:4000`). |
 
 ## Backend (`apps/api/.env`)
 
-| Variable | Required | Environments | Description |
+| Variable | Required | Description |
+|---|---|---|
+| `PORT` | Yes | API listen port (default: `4000`). |
+| `NODE_ENV` | Yes | `development` or `production`. Production enforces strict startup checks. |
+| `AUTH0_DOMAIN` | Yes | Auth0 tenant domain for JWT validation. |
+| `AUTH0_AUDIENCE` | Yes | Expected JWT audience (`https://api.vaultguard.ai`). |
+| `AUTH0_CLIENT_ID` | Yes | Auth0 client ID for Token Vault and CIBA operations. |
+| `AUTH0_CLIENT_SECRET` | Yes | Auth0 client secret for Token Vault and CIBA operations. |
+| `FGA_STORE_ID` | Yes (for FGA) | OpenFGA store identifier. |
+| `FGA_CLIENT_ID` | Yes (for FGA) | OpenFGA API client ID. |
+| `FGA_CLIENT_SECRET` | Yes (for FGA) | OpenFGA API client secret. |
+| `SUPABASE_URL` | Yes | Supabase project URL. |
+| `SUPABASE_SERVICE_ROLE_KEY` | Yes | Supabase service role key (bypasses RLS — never expose in frontend). |
+| `ANTHROPIC_API_KEY` | Yes | Anthropic API key for Claude AI risk analysis. |
+| `FRONTEND_URL` | Yes | Exact allowed CORS origin. Must match frontend URL (no trailing slash). |
+| `AUTH0_BASE_URL` | Yes | Web base URL for auth redirect/callback flows. |
+| `DEFAULT_GITHUB_ORG` | Optional | Fallback GitHub org for scheduled/manual scans. |
+
+## Shared Auth0 Credentials
+
+The frontend and backend use the **same Auth0 application**, so these values are identical in both files:
+
+| Variable | Same Value? |
+|----------|:-----------:|
+| `AUTH0_DOMAIN` / `AUTH0_ISSUER_BASE_URL` | Yes (same tenant, different format) |
+| `AUTH0_CLIENT_ID` | Yes |
+| `AUTH0_CLIENT_SECRET` | Yes |
+| `AUTH0_AUDIENCE` | Yes |
+
+## Security Flags (Backend Only)
+
+| Variable | Local | Staging/Prod | Notes |
 |---|---|---|---|
-| `PORT` | Yes | local, staging, production | API listen port. |
-| `NODE_ENV` | Yes | local, staging, production | Runtime mode; production enforces strict startup checks. |
-| `AUTH0_DOMAIN` | Yes | local, staging, production | Auth0 tenant domain for JWT validation. |
-| `AUTH0_AUDIENCE` | Yes | local, staging, production | Expected audience for JWT validation. |
-| `AUTH0_CLIENT_ID` | Yes | local, staging, production | Auth0 AI client ID for connected account/token operations. |
-| `AUTH0_CLIENT_SECRET` | Yes | local, staging, production | Auth0 AI client secret. |
-| `FGA_STORE_ID` | Required for FGA policies | local, staging, production | OpenFGA store identifier. |
-| `FGA_CLIENT_ID` | Required for FGA policies | local, staging, production | OpenFGA API client ID. |
-| `FGA_CLIENT_SECRET` | Required for FGA policies | local, staging, production | OpenFGA API client secret. |
-| `SUPABASE_URL` | Yes | local, staging, production | Supabase project URL. |
-| `SUPABASE_SERVICE_ROLE_KEY` | Yes | local, staging, production | Supabase service role key for backend operations. |
-| `ANTHROPIC_API_KEY` | Yes | local, staging, production | Anthropic API key for risk analysis. |
-| `FRONTEND_URL` | Yes | local, staging, production | Exact allowed CORS origin for web app. |
-| `AUTH0_BASE_URL` | Yes | local, staging, production | Web base URL used in auth redirect/callback dependent flows. |
-| `DEFAULT_GITHUB_ORG` | Optional | local, staging, production | Fallback org for scheduled/manual GitHub scans. |
+| `ALLOW_INSECURE_DEV_AUTH` | Yes (temporary) | Never | Bypasses MFA/FGA for local dev. Production blocks startup if `true`. |
+| `ENABLE_DEMO_ENDPOINTS` | Yes (demo) | Never | Enables demo-seed/reset endpoints. Production blocks startup if `true`. |
 
-## Security flags
+## Common Pitfalls
 
-| Variable | Allowed in local | Allowed in staging/prod | Notes |
-|---|---|---|---|
-| `ALLOW_INSECURE_DEV_AUTH` | Yes (temporary only) | No | Must be `false` outside local troubleshooting. |
-| `ENABLE_DEMO_ENDPOINTS` | Yes (demo only) | No | Must be `false` in shared/staging/production. |
-
-## Common pitfalls
-
-- `FRONTEND_URL` and `AUTH0_BASE_URL` usually use the same origin but protect different concerns.
-- Mismatch between `NEXT_PUBLIC_API_URL` and backend deploy URL causes proxy/API failures.
-- Missing `AUTH0_ISSUER_BASE_URL` in web env causes login flow failures.
+- `AUTH0_ISSUER_BASE_URL` needs `https://` prefix; `AUTH0_DOMAIN` does not.
+- `FRONTEND_URL` and `AUTH0_BASE_URL` usually share the same origin but protect different concerns (CORS vs. auth redirects).
+- Mismatch between `NEXT_PUBLIC_API_URL` and the backend's actual deploy URL causes proxy/API failures.
+- `NEXT_PUBLIC_*` vars require a full server restart after changes (Next.js inlines them at build time).
+- `SUPABASE_SERVICE_ROLE_KEY` bypasses Row Level Security — never expose in client-side code.

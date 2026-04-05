@@ -5,6 +5,15 @@ This document is the canonical setup guide for local development and provider on
 For deployment and release operations, use [deployment.md](./deployment.md).
 For a complete environment variable matrix, use [ENV_VARS_REFERENCE.md](./ENV_VARS_REFERENCE.md).
 
+## Environment Variable Setup Guides
+
+For detailed, step-by-step instructions on where to get every key/secret:
+
+- **[Backend ENV Setup Guide](./BACKEND_ENV_SETUP.md)** — Auth0, FGA, Supabase, Anthropic, all with exact URLs and screenshots instructions
+- **[Frontend ENV Setup Guide](./FRONTEND_ENV_SETUP.md)** — Auth0 credentials and backend URL setup
+
+These guides walk you through every dashboard, every click, and every value to copy.
+
 ## Prerequisites
 
 - Node.js 20+ (see `.nvmrc`)
@@ -26,16 +35,11 @@ cd vaultguard-ai
 # 2. Run the setup script (checks prereqs, installs deps, builds)
 ./scripts/setup-local.sh
 
-# 3. Set up environment variables
-cp .env.example apps/web/.env.local
-cp .env.example apps/api/.env
-# Edit both files (see docs/ENV_VARS_REFERENCE.md for full key descriptions)
-# Minimum required values:
-#   web: AUTH0_SECRET, AUTH0_BASE_URL, AUTH0_ISSUER_BASE_URL,
-#        AUTH0_CLIENT_ID, AUTH0_CLIENT_SECRET, AUTH0_AUDIENCE, NEXT_PUBLIC_API_URL
-#   api: AUTH0_DOMAIN, AUTH0_AUDIENCE, AUTH0_CLIENT_ID, AUTH0_CLIENT_SECRET,
-#        SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, ANTHROPIC_API_KEY,
-#        FRONTEND_URL, AUTH0_BASE_URL
+# 3. Set up environment variables (each app has its own .env.example)
+cp apps/web/.env.example apps/web/.env.local
+cp apps/api/.env.example apps/api/.env
+# Edit each file with your credentials
+# Step-by-step guides: docs/FRONTEND_ENV_SETUP.md & docs/BACKEND_ENV_SETUP.md
 
 # 4. Set up the database
 # Run scripts/setup-database.sql in your Supabase SQL editor

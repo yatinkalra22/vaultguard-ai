@@ -38,7 +38,7 @@ Use this checklist before merging docs updates:
 - Ensure each command shown is executable as written.
 - Ensure each referenced script/file exists.
 - Ensure new docs are linked from [README.md](../README.md) and this index.
-- Keep `.env.example` and [ENV_VARS_REFERENCE.md](./ENV_VARS_REFERENCE.md) aligned.
+- Keep `apps/web/.env.example`, `apps/api/.env.example`, and [ENV_VARS_REFERENCE.md](./ENV_VARS_REFERENCE.md) aligned.
 - Keep setup in [setup.md](./setup.md), deployment in [deployment.md](./deployment.md), and avoid duplicating step-by-step flows elsewhere.
 - Update [README.md](../README.md) links whenever new docs are added or renamed.
 - Prefer linking to canonical docs instead of copying detailed procedures.

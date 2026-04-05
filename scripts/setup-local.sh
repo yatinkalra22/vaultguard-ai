@@ -38,9 +38,9 @@ ENV_OK=true
 
 if [ ! -f apps/web/.env.local ]; then
   echo "Warning: apps/web/.env.local not found"
-  echo "  Create it with your Auth0 frontend config:"
-  echo "    cp .env.example apps/web/.env.local"
-  echo "    # Then edit with your Auth0 tenant values"
+  echo "  Create it from the frontend template:"
+  echo "    cp apps/web/.env.example apps/web/.env.local"
+  echo "    # Then fill in your keys — see docs/FRONTEND_ENV_SETUP.md"
   ENV_OK=false
 else
   echo "Frontend .env.local found"
@@ -48,9 +48,9 @@ fi
 
 if [ ! -f apps/api/.env ]; then
   echo "Warning: apps/api/.env not found"
-  echo "  Create it with your backend config:"
-  echo "    cp .env.example apps/api/.env"
-  echo "    # Then edit with your Auth0, Supabase, and Anthropic values"
+  echo "  Create it from the backend template:"
+  echo "    cp apps/api/.env.example apps/api/.env"
+  echo "    # Then fill in your keys — see docs/BACKEND_ENV_SETUP.md"
   ENV_OK=false
 else
   echo "Backend .env found"
@@ -73,12 +73,12 @@ echo ""
 
 if [ "$ENV_OK" = false ]; then
   echo "ACTION REQUIRED: Configure environment variables before starting."
-  echo "  See .env.example for all required values."
+  echo "  See apps/web/.env.example and apps/api/.env.example for required values."
   echo ""
 fi
 
 echo "Next steps:"
-echo "  1. Configure environment variables (see .env.example)"
+echo "  1. Configure environment variables (see apps/web/.env.example & apps/api/.env.example)"
 echo "  2. Set up Auth0 tenant (see docs/setup.md)"
 echo "  3. Run scripts/setup-database.sql in Supabase SQL Editor"
 echo "  4. Optionally run scripts/seed-database.sql for test data"
