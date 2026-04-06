@@ -29,7 +29,9 @@ export class AlertsController {
   @Get('settings')
   async getSettings(@Request() req: { user: { orgId?: string } }) {
     const orgId = req.user.orgId;
-    if (!orgId) return null;
+    // WHY: Return defaults instead of null so NestJS sends a JSON body.
+    // Returning null produces an empty response that breaks res.json() on the client.
+    if (!orgId) return this.alertsService.getSettings('default');
     return this.alertsService.getSettings(orgId);
   }
 

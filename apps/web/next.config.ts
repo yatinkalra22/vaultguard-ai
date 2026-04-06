@@ -7,6 +7,8 @@ import type { NextConfig } from "next";
 // See: https://nextjs.org/docs/app/guides/content-security-policy
 const isDev = process.env.NODE_ENV === "development";
 
+// WHY: upgrade-insecure-requests must be omitted in dev — it forces the browser
+// to rewrite http://localhost requests to https, which breaks local API calls.
 const cspHeader = `
   default-src 'self';
   script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""};
@@ -16,8 +18,7 @@ const cspHeader = `
   object-src 'none';
   base-uri 'self';
   form-action 'self';
-  frame-ancestors 'none';
-  upgrade-insecure-requests;
+  frame-ancestors 'none';${isDev ? "" : "\n  upgrade-insecure-requests;"}
 `;
 
 const nextConfig: NextConfig = {
@@ -60,12 +61,17 @@ const nextConfig: NextConfig = {
             key: "Permissions-Policy",
             value: "camera=(), microphone=(), geolocation=()",
           },
-          // WHY: Forces HTTPS for 1 year. includeSubDomains ensures all
-          // subdomains also use HTTPS. Prevents SSL-stripping attacks.
-          {
-            key: "Strict-Transport-Security",
-            value: "max-age=31536000; includeSubDomains",
-          },
+          // WHY: Forces HTTPS for 1 year. Only in production — on localhost
+          // this causes the browser to cache an HTTPS-only policy that breaks
+          // all subsequent HTTP requests to localhost for a year.
+          ...(isDev
+            ? []
+            : [
+                {
+                  key: "Strict-Transport-Security",
+                  value: "max-age=31536000; includeSubDomains",
+                },
+              ]),
         ],
       },
     ];

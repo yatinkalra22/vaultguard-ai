@@ -37,13 +37,22 @@ export default function SettingsPage() {
   const [loadingAlerts, setLoadingAlerts] = useState(true);
 
   useEffect(() => {
+    let cancelled = false;
+
     api
       .get<AlertSettings>("alerts/settings")
       .then((data) => {
-        if (data) setAlerts(data);
+        if (!cancelled && data) setAlerts(data);
       })
-      .catch((err) => showErrorToast(err, "load_alert_settings"))
-      .finally(() => setLoadingAlerts(false));
+      .catch((err) => {
+        // WHY: Guard against React strict mode double-mount firing duplicate toasts.
+        if (!cancelled) showErrorToast(err, "load_alert_settings");
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingAlerts(false);
+      });
+
+    return () => { cancelled = true; };
   }, []);
 
   async function saveAlerts() {
