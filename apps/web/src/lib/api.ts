@@ -282,6 +282,14 @@ export function showErrorToast(error: unknown, action?: string) {
       action,
     });
 
+    // WHY: A 401 means the session token is expired or invalid. Showing a toast
+    // and leaving the user on a broken page is poor UX — redirect straight to
+    // login so they can re-authenticate without any extra clicks.
+    if (error.status === 401) {
+      window.location.href = "/auth/login";
+      return;
+    }
+
     toast.error(
       error.code === ERROR_CODES.STEP_UP_REQUIRED
         ? "Verification Required"

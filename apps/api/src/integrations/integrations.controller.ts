@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   Param,
   Post,
@@ -31,7 +32,16 @@ export class IntegrationsController {
   ) {
     const orgId = req.user.orgId;
     if (!orgId) {
-      return { error: 'No organization associated with this user' };
+      // WHY: Must throw (not return) so the frontend catch block runs.
+      // Returning { error } gives HTTP 200 — the frontend destructures `url`,
+      // gets undefined, and navigates to the literal string "undefined".
+      // WHY ForbiddenException (403) not UnauthorizedException (401):
+      // The user IS authenticated — their JWT is valid. They just don't have an
+      // org claim yet (Auth0 org not configured). 401 would trigger the
+      // global auto-logout redirect in showErrorToast, which is wrong here.
+      throw new ForbiddenException(
+        'No organization associated with this account. Ensure your Auth0 organization is configured.',
+      );
     }
 
     if (provider !== 'slack' && provider !== 'github') {
@@ -48,7 +58,9 @@ export class IntegrationsController {
   ) {
     const orgId = req.user.orgId;
     if (!orgId) {
-      return { error: 'No organization associated with this user' };
+      throw new ForbiddenException(
+        'No organization associated with this account.',
+      );
     }
 
     return this.integrations.disconnectIntegration(orgId, id);

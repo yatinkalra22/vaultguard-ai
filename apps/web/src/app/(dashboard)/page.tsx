@@ -7,6 +7,7 @@ import { FindingsSummary } from "@/components/dashboard/FindingsSummary";
 import { RecentScans } from "@/components/dashboard/RecentScans";
 import { LiveScanFeed } from "@/components/dashboard/LiveScanFeed";
 import { TriggerScanButton } from "@/components/dashboard/TriggerScanButton";
+import Link from "next/link";
 import { AgentPermissions } from "@/components/dashboard/AgentPermissions";
 import { DashboardMetricsDisplay } from "@/components/dashboard/MetricsDisplay";
 import { AlertHistoryPanel } from "@/components/dashboard/AlertHistoryPanel";
@@ -117,8 +118,26 @@ export default function OverviewPage() {
               : "Connect your integrations to start scanning."}
           </p>
         </div>
-        <TriggerScanButton />
+        <TriggerScanButton
+          hasIntegrations={(data?.connectedIntegrations ?? 0) > 0}
+          isLoading={loading}
+        />
       </div>
+
+      {/* Empty state banner — shown when no integrations are connected */}
+      {!loading && (data?.connectedIntegrations ?? 0) === 0 && (
+        <div className="rounded-lg border border-dashed border-border bg-muted/40 px-4 py-3 flex items-center justify-between gap-4 text-sm">
+          <p className="text-muted-foreground">
+            No integrations connected yet. Connect Slack or GitHub to start scanning.
+          </p>
+          <Link
+            href="/integrations"
+            className="shrink-0 font-medium text-foreground underline underline-offset-4 hover:text-muted-foreground"
+          >
+            Go to Integrations →
+          </Link>
+        </div>
+      )}
 
       {/* Metric cards grid — risk score spans 2 rows on desktop */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

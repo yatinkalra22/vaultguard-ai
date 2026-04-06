@@ -6,17 +6,24 @@ import { Play, Loader2 } from "lucide-react";
 import { api, showErrorToast, showSuccessToast } from "@/lib/api";
 import { triggerMetricsRefresh } from "@/hooks/useMetrics";
 
-/**
- * WHY: Manual scan trigger is the first demo action — "click Run Scan Now,
- * watch findings appear live." It's the hook that makes the demo compelling.
- * Ref: 06-design-demo.md — Demo Moment 2 "Click Run Scan Now button"
- */
-export function TriggerScanButton() {
-  const [loading, setLoading] = useState(false);
+interface TriggerScanButtonProps {
+  // WHY: Button must be aware of integration state so it doesn't fire a scan
+  // against nothing. When no integrations are connected the scan pipeline
+  // fetches zero data and produces zero findings — misleading to the user.
+  hasIntegrations: boolean;
+  // isLoading = initial dashboard data is still being fetched, so we don't
+  // know the integration count yet. Keep the button disabled during this time.
+  isLoading?: boolean;
+}
+
+export function TriggerScanButton({
+  hasIntegrations,
+  isLoading = false,
+}: TriggerScanButtonProps) {
+  const [scanning, setScanning] = useState(false);
 
   async function handleTrigger() {
-    setLoading(true);
-
+    setScanning(true);
     try {
       await api.post("scans/trigger");
       showSuccessToast("Scan started", "Scanning your connected SaaS tools...");
@@ -24,20 +31,40 @@ export function TriggerScanButton() {
     } catch (err: unknown) {
       showErrorToast(err, "trigger_scan");
     } finally {
-      setLoading(false);
+      setScanning(false);
     }
   }
 
-  return (
-    <div className="flex items-center gap-2">
-      <Button onClick={handleTrigger} disabled={loading} size="sm">
-        {loading ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
-        ) : (
-          <Play className="h-4 w-4" />
-        )}
-        {loading ? "Scanning..." : "Run Scan Now"}
-      </Button>
-    </div>
+  const isDisabled = scanning || isLoading || !hasIntegrations;
+
+  const button = (
+    <Button
+      onClick={handleTrigger}
+      disabled={isDisabled}
+      size="sm"
+    >
+      {scanning ? (
+        <Loader2 className="h-4 w-4 animate-spin" />
+      ) : (
+        <Play className="h-4 w-4" />
+      )}
+      {scanning ? "Scanning..." : "Run Scan Now"}
+    </Button>
   );
+
+  // WHY: Disabled buttons don't fire mouse events so a CSS tooltip won't show.
+  // Wrapping in a <span> with a native title restores the hover hint without
+  // needing a third-party tooltip component.
+  if (!isLoading && !hasIntegrations) {
+    return (
+      <span
+        className="cursor-not-allowed"
+        title="Connect Slack or GitHub first to run a scan"
+      >
+        {button}
+      </span>
+    );
+  }
+
+  return button;
 }
