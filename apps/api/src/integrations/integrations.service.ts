@@ -60,29 +60,62 @@ export class IntegrationsService {
     return data;
   }
 
+  private resolveAuth0Connection(provider: 'slack' | 'github'): string {
+    if (provider === 'slack') {
+      // WHY: Default changed from 'sign-in-with-slack' to 'slack'. Auth0's
+      // built-in "Sign in with Slack" uses Slack's legacy OAuth v1 which only
+      // supports identity.* scopes. A custom social connection using Slack's
+      // OAuth v2 (/oauth/v2/authorize) is required for Web API scopes.
+      return this.config.get<string>('AUTH0_CONNECTION_SLACK') ?? 'slack';
+    }
+
+    return this.config.get<string>('AUTH0_CONNECTION_GITHUB') ?? 'github';
+  }
+
+  private resolveAuth0ConnectionScope(provider: 'slack' | 'github'): string {
+    const raw =
+      provider === 'slack'
+        // WHY: Auth0's built-in slack-oauth-2 connection passes connection_scope
+        // as user_scope in Slack OAuth v2. Only user-token-compatible scopes
+        // are valid here — chat:write is a bot-only scope and causes
+        // "invalid_scope" from Slack when passed as user_scope.
+        // admin.* scopes require Slack Enterprise Grid — omitted from defaults.
+        // See: https://api.slack.com/scopes
+        ? (this.config.get<string>('AUTH0_CONNECTION_SCOPE_SLACK') ??
+            'users:read,users:read.email,team:read,channels:read')
+        : (this.config.get<string>('AUTH0_CONNECTION_SCOPE_GITHUB') ??
+            'read:org,read:user,repo,read:audit_log,admin:org');
+
+    // WHY: Auth0 expects connection_scope as comma-separated values. Normalize
+    // comma or whitespace input so envs remain backward compatible.
+    return raw
+      .split(/[\s,]+/)
+      .map((scope) => scope.trim())
+      .filter(Boolean)
+      .join(',');
+  }
+
   private buildAuth0AuthorizeUrl(provider: 'slack' | 'github'): string {
-    const domain = this.config.get<string>('AUTH0_DOMAIN');
-    const clientId = this.config.get<string>('AUTH0_CLIENT_ID');
-    const audience = this.config.get<string>('AUTH0_AUDIENCE');
     const baseUrl = this.config.get<string>('AUTH0_BASE_URL');
 
-    if (!domain || !clientId || !audience || !baseUrl) {
+    if (!baseUrl) {
       throw new BadRequestException(
         'Auth0 configuration is incomplete for integration connect flow',
       );
     }
 
+    // WHY: Use our app's /auth/login route with connection params to trigger
+    // an /authorize flow that stores tokens in Token Vault. The login route
+    // strips the organization param to avoid Auth0 rejecting the request
+    // (social connections can't always be added to org connection lists).
+    // The SDK sets state/nonce cookies so the callback succeeds.
     const params = new URLSearchParams({
-      response_type: 'code',
-      client_id: clientId,
-      // WHY: SDK v4 handles callbacks at /auth/callback (not /api/auth/callback).
-      redirect_uri: `${baseUrl}/auth/callback`,
-      scope: 'openid profile email offline_access',
-      audience,
-      connection: provider,
+      returnTo: '/integrations',
+      connection: this.resolveAuth0Connection(provider),
+      connection_scope: this.resolveAuth0ConnectionScope(provider),
       prompt: 'consent',
     });
 
-    return `https://${domain}/authorize?${params.toString()}`;
+    return `${baseUrl}/auth/login?${params.toString()}`;
   }
 }

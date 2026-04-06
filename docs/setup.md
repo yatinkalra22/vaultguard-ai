@@ -99,25 +99,98 @@ pnpm dev
 - Identifier: `https://api.vaultguard.ai`
 - Algorithm: RS256
 
-### 4. Enable Token Vault
-- Auth0 Dashboard → Applications → VaultGuard Web → Advanced Settings → Grant Types → Token Vault
+### 4. Enable Token Vault & Token Exchange
+- Auth0 Dashboard → Applications → VaultGuard Web → Advanced Settings → Grant Types
+- Enable **Token Vault** and **Token Exchange**
 - If available in your tenant, keep CIBA enabled in the same Grant Types section
 
-### 5. Set up Connected Accounts
-- **Slack:** Authentication → Social → Add Connection → Sign in with Slack
-  - Purpose: choose **Connected Accounts for Token Vault**.
-  - Do not choose **Authentication** unless you want Slack to be a login provider.
-  - Under **Applications using this connection**, enable **VaultGuard Web** only.
-  - Scopes: `admin.users:read`, `admin.apps:read`, `users:read`, `users:read.email`, `team:read`, `channels:read`
-- **GitHub:** Authentication → Social → Add Connection → GitHub
-  - Scopes: `read:org`, `read:user`, `repo`, `read:audit_log`, `admin:org`
+### 5. Activate the My Account API
+VaultGuard uses the SDK's `/auth/connect` endpoint to connect user accounts, which requires the My Account API.
 
-### 6. Enable CIBA
+1. Dashboard → Applications → **APIs**
+2. Find and activate **Auth0 My Account** API
+3. Authorize **VaultGuard Web** with scopes: `create:me:connected_accounts`, `read:me:connected_accounts`, `delete:me:connected_accounts`
+4. Enable **Allow Skipping User Consent** and **MRRT** (Multi-Resource Refresh Token) in the API settings
+
+See `docs/BACKEND_ENV_SETUP.md` Step 3b for the detailed walkthrough.
+
+### 6. Set up Social Connections
+
+#### Slack — Custom Social Connection (required for Token Vault)
+
+Auth0 has two Slack connection types. Only the **custom** one works for Token Vault:
+
+| Connection type | Token returned | Works with Token Vault? |
+|---|---|---|
+| Built-in "Sign in with Slack" (`sign-in-with-slack`) | SIWS identity token | ❌ SIWS scopes conflict with Web API scopes |
+| Built-in "Slack OAuth 2.0" (`slack-oauth-2`) | Bot token (`xoxb-`, `token_type: "bot"`) | ❌ Auth0 rejects `token_type: "bot"` |
+| **Custom using `v2_user` endpoint** | User bearer token (`xoxp-`, `token_type: "bearer"`) | ✅ Standard OAuth 2.0 — Auth0 accepts it |
+
+**Steps:**
+
+1. Authentication → Social → **Create Custom** (scroll to the bottom of the provider list)
+2. Fill in:
+   - **Name:** `slack-custom`
+   - **Authorization URL:** `https://slack.com/oauth/v2_user/authorize`
+   - **Token URL:** `https://slack.com/api/oauth.v2.user.access`
+   - **Scope:** `users:read users:read.email team:read channels:read`
+   - **Client ID / Client Secret:** from your Slack app (`api.slack.com/apps` → Basic Information → App Credentials)
+3. Paste this **Fetch User Profile Script:**
+
+   ```javascript
+   function(accessToken, ctx, cb) {
+     request.get('https://slack.com/api/auth.test', {
+       headers: { 'Authorization': 'Bearer ' + accessToken },
+       json: true
+     }, function(err, resp, body) {
+       if (err) return cb(err);
+       if (!body.ok) return cb(new Error(body.error));
+       cb(null, {
+         user_id: body.user_id,
+         name: body.user,
+         team_id: body.team_id
+       });
+     });
+   }
+   ```
+
+4. Purpose: **Connected Accounts for Token Vault**
+5. Under **Applications using this connection**, enable **VaultGuard Web** only
+6. Under **Connection Permissions**, enable **Offline Access**
+
+> **Why `v2_user` instead of `v2`?**
+> Slack's standard `/oauth/v2/authorize` + `oauth.v2.access` returns a bot token with
+> `token_type: "bot"`. Auth0 Token Vault rejects non-bearer token types. The `v2_user`
+> endpoint (`/oauth/v2_user/authorize` + `oauth.v2.user.access`) is compliant with the
+> OAuth 2.0 RFC and returns `token_type: "bearer"` — which Auth0 Token Vault accepts.
+> See: https://docs.slack.dev/authentication/installing-with-oauth#user-centric
+
+> **Why not `chat:write`?** `chat:write` is a bot-only scope. The `v2_user` flow issues
+> user tokens, and bot-only scopes in a user token request cause Slack to return
+> `invalid_scope`. Omit it here — alert delivery via `chat.postMessage` requires a
+> separate bot token flow if needed.
+
+#### GitHub
+
+- Authentication → Social → Add Connection → **GitHub**
+  - Purpose: **Connected Accounts for Token Vault**
+  - Scopes: `read:org`, `read:user`, `repo`, `read:audit_log`, `admin:org`
+  - Under **Applications**, enable **VaultGuard Web** only
+  - Under **Connection Permissions**, enable **Offline Access**
+
+Set backend env vars to match the connection names you used:
+
+```env
+AUTH0_CONNECTION_SLACK=slack-custom
+AUTH0_CONNECTION_GITHUB=github
+```
+
+### 7. Enable CIBA
 - Applications → VaultGuard Web → Advanced Settings → Grant Types
 - Enable: `urn:openid:params:grant-type:ciba`
 - CIBA (Client-Initiated Backchannel Authentication) is used as explicit human approval for remediation actions.
 
-### 7. Enable MFA + Step-Up Authentication
+### 8. Enable MFA + Step-Up Authentication
 - Security → Multi-factor Auth → Enable at least one factor (OTP recommended)
 - Set MFA policy to **"Never"** (MFA is triggered only by our Post-Login Action, not globally)
 - Actions → Triggers → Login → Create a new Action with this code:
@@ -160,8 +233,10 @@ exports.onExecutePostLogin = async (event, api) => {
 1. Go to [api.slack.com/apps](https://api.slack.com/apps) → Create New App
 2. Open the app → **Basic Information** → **App Credentials**.
 3. Copy the **Client ID** and **Client Secret** for the Auth0 social connection in Step 5.
-4. Open **OAuth & Permissions** and add **Bot Token Scopes** for the backend scanner.
-5. Install to your test workspace.
+4. Open **OAuth & Permissions** and add this redirect URL exactly:
+  - `https://vaultguard-ai-dev.us.auth0.com/login/callback`
+5. In the same page, add **Bot Token Scopes** for the backend scanner.
+6. Install to your test workspace.
 
 ## GitHub OAuth App Setup
 

@@ -15,6 +15,7 @@ import { auth0 } from '@/lib/auth0';
  */
 export async function GET(req: NextRequest) {
   const returnTo = req.nextUrl.searchParams.get('returnTo') || '/findings';
+  const organization = process.env.AUTH0_ORGANIZATION_ID;
 
   return auth0.startInteractiveLogin({
     authorizationParameters: {
@@ -25,6 +26,7 @@ export async function GET(req: NextRequest) {
       // WHY: max_age=0 forces re-authentication even if the user has
       // an active session. This ensures the MFA is fresh.
       max_age: 0,
+      ...(organization ? { organization } : {}),
     },
     returnTo,
   });

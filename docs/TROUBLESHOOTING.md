@@ -86,6 +86,79 @@ Checks:
 - Do not leave them blank. Blank fields use Auth0's developer keys, which cannot be used for Connected Accounts with Token Vault.
 - Make sure those values come from your own GitHub OAuth App in GitHub Developer Settings → OAuth Apps.
 
+### Symptom: Slack error "redirect_uri did not match any configured URIs"
+
+Checks:
+
+- Open your Slack app in `api.slack.com/apps`.
+- Go to **OAuth & Permissions** (not Basic Information).
+- Add redirect URL exactly: `https://vaultguard-ai-dev.us.auth0.com/login/callback`.
+- Save the redirect URL, then retry the Auth0 connection flow.
+
+### Symptom: Slack error "Invalid permissions requested" / `invalid_scope`
+
+This happens when the Auth0 Slack connection type is incompatible with the scopes being requested.
+
+**Root cause A — built-in `slack-oauth-2` connection with `connection_scope`:**
+Auth0's built-in "Slack OAuth 2.0" connection uses Sign in with Slack (SIWS) internally.
+SIWS adds its own user scopes (`openid`, `profile`, `email`). When the app also passes
+`connection_scope=users:read,...` (non-SIWS scopes), Slack rejects the combined request
+as a scope conflict. The official Slack docs state:
+> *"A scope conflict occurs when attempting to combine Sign in with Slack (SIWS) user scopes
+> with non-Sign in with Slack scopes in the same OAuth flow."*
+
+Fix: Do not use Auth0's built-in `slack-oauth-2`. Create a **custom** connection using
+`https://slack.com/oauth/v2_user/authorize` instead. See `docs/BACKEND_ENV_SETUP.md` Step 3c.
+
+**Root cause B — `chat:write` in `AUTH0_CONNECTION_SCOPE_SLACK`:**
+`chat:write` is a bot-only scope. It cannot be requested in the user-token (`v2_user`) flow.
+Slack returns `invalid_scope` when a bot-only scope appears in a user token request.
+
+Fix: Remove `chat:write` from `AUTH0_CONNECTION_SCOPE_SLACK`.
+Correct value: `users:read,users:read.email,team:read,channels:read`.
+
+**Root cause C — `AUTH0_CONNECTION_SCOPE_SLACK` missing entirely:**
+
+- Confirm `AUTH0_CONNECTION_SCOPE_SLACK` exists in your real `apps/api/.env`.
+- Restart the API after updating env vars.
+
+### Symptom: Auth0 error `not_allowed_token_type` after clicking Allow on Slack
+
+The Slack OAuth flow completed but Auth0 rejected the token it received.
+
+**Root cause:** The custom Slack connection is using the wrong Authorization/Token URLs.
+Slack's standard `oauth.v2.access` endpoint returns `token_type: "bot"`. Auth0 Token
+Vault only accepts standard OAuth 2.0 bearer tokens and rejects `token_type: "bot"`.
+
+Fix: Update the **custom** Auth0 Slack connection to use the user-centric endpoints:
+
+| Field | Wrong (bot token flow) | Correct (user token flow) |
+|---|---|---|
+| Authorization URL | `https://slack.com/oauth/v2/authorize` | `https://slack.com/oauth/v2_user/authorize` |
+| Token URL | `https://slack.com/api/oauth.v2.access` | `https://slack.com/api/oauth.v2.user.access` |
+
+The `oauth.v2.user.access` endpoint is "compliant with the OAuth 2.0 RFC" (per Slack docs)
+and returns `token_type: "bearer"` — which Auth0 Token Vault accepts.
+See: https://docs.slack.dev/authentication/installing-with-oauth#user-centric
+
+### Symptom: "/auth/connect" returns "An unexpected error occurred while trying to initiate the connect account flow"
+
+This means the Auth0 My Account API is not properly configured. Checks:
+
+1. **Activate My Account API:** Dashboard → APIs → look for the "Auth0 My Account" API (or an activation banner). It must be activated.
+2. **Authorize VaultGuard Web:** My Account API → Machine to Machine Applications → toggle VaultGuard Web to Authorized.
+3. **Enable scopes:** Expand VaultGuard Web's permissions and enable `create:me:connected_accounts`, `read:me:connected_accounts`, `delete:me:connected_accounts`.
+4. **Enable MRRT:** My Account API → Settings → enable Multi-Resource Refresh Token (MRRT).
+5. **Allow Skipping User Consent:** My Account API → Settings → enable this toggle.
+6. **Enable Token Exchange grant:** Applications → VaultGuard Web → Advanced Settings → Grant Types → enable Token Exchange.
+7. **Enable Offline Access on connections:** Authentication → Social → Slack/GitHub → Connection Permissions → enable Offline Access.
+
+See `docs/BACKEND_ENV_SETUP.md` Step 3b for the full walkthrough.
+
+### Symptom: Auth0 "Try Connection" shows "The connection is not active for authentication"
+
+This is **expected** when the connection purpose is "Connected Accounts for Token Vault". The "Try Connection" button tests the authentication flow, not the Connected Accounts flow. Use the in-app "Connect Slack" / "Connect GitHub" button instead.
+
 ### Symptom: scans run but no findings
 
 Checks:

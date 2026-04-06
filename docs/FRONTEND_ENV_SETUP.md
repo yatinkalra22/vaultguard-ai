@@ -17,6 +17,7 @@ Step-by-step guide to get every key/value for the frontend. The frontend only ne
 | `AUTH0_CLIENT_ID` | Auth0 Dashboard → Applications → Settings |
 | `AUTH0_CLIENT_SECRET` | Auth0 Dashboard → Applications → Settings |
 | `AUTH0_AUDIENCE` | Auth0 Dashboard → APIs |
+| `AUTH0_ORGANIZATION_ID` | Auth0 Dashboard → Organizations → Your Org |
 | `NEXT_PUBLIC_API_URL` | Set manually (`http://localhost:4000`) |
 
 ---
@@ -111,6 +112,31 @@ Click **Save Changes**.
 ```env
 AUTH0_AUDIENCE=https://api.vaultguard.ai
 ```
+
+---
+
+## Step 5: Auth0 — Organization Setup
+
+VaultGuard expects the signed-in user to belong to an Auth0 Organization so the JWT includes `org_id`.
+
+1. Go to **https://manage.auth0.com/dashboard**
+2. Left sidebar → **Organizations** → **Organizations**
+3. Create an organization for VaultGuard if you have not already
+4. Open the organization and copy its **Organization ID**
+5. Add that value to `AUTH0_ORGANIZATION_ID` in `apps/web/.env.local`
+6. Add your user as a member of that organization
+
+If your Auth0 org page does not show an application enablement tab (newer UI), configure access from the application side instead:
+
+- **Applications → VaultGuard Web**
+- Set **Types of Users** to **Business Users** or **Both**
+- Save changes
+
+If you skip this step, the app can authenticate successfully but the backend will reject connect/remediation actions with `no_organization`.
+
+> **Important:** After adding the organization or adding a user to it, fully sign out of VaultGuard and Auth0, then sign in again. Existing sessions will not pick up the new `org_id` claim.
+
+> **Note:** If Auth0 shows "Connected Accounts only connections aren't supported in Organizations yet", that is expected for Slack/GitHub here. Do not try to enable those from the Organization Connections page. Keep them configured on the Social/Connected Accounts connection itself and ensure the user is a member of the organization.
 
 ---
 

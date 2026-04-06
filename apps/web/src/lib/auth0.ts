@@ -32,6 +32,11 @@ export const auth0 = new Auth0Client({
   // behind proxies or in non-standard environments.
   appBaseUrl,
 
+  // WHY: Organization is NOT set here at the client level. It is passed
+  // explicitly in /auth/login/route.ts for normal logins, and omitted for
+  // integration connect flows. Setting it here would leak into integration
+  // connect requests where Auth0 rejects the social connection because it
+  // isn't added to the org's connection list.
   authorizationParameters: {
     audience: process.env.AUTH0_AUDIENCE,
     scope: "openid profile email offline_access",
@@ -41,18 +46,29 @@ export const auth0 = new Auth0Client({
   // an error (invalid_request, access_denied, etc.), we log it server-side for
   // debugging and redirect to /auth/error (a public page outside the dashboard
   // layout) to prevent redirect loops.
-  async onCallback(error, _context, _session) {
+  async onCallback(error, context, _session) {
     if (error) {
+      // WHY: Include the cause details in both the log and the URL so we can
+      // see the actual Auth0 error (e.g., "connection not active") not just
+      // the generic SDK wrapper message.
+      const causeMsg = (error.cause as Error | undefined)?.message;
+      const fullMessage = causeMsg
+        ? `${error.message} Cause: ${causeMsg}`
+        : error.message;
+
       console.error("[Auth0 callback error]", {
         message: error.message,
         cause: error.cause,
+        stack: error.stack,
       });
       return NextResponse.redirect(
-        new URL(`/auth/error?message=${encodeURIComponent(error.message)}`, appBaseUrl),
+        new URL(`/auth/error?message=${encodeURIComponent(fullMessage)}`, appBaseUrl),
       );
     }
 
-    // WHY: Redirect to dashboard after successful authentication.
-    return NextResponse.redirect(new URL("/", appBaseUrl));
+    // WHY: Respect the returnTo stored in the transaction state so that
+    // integration-connect callbacks land on /integrations, not /.
+    const returnTo = context?.returnTo || "/";
+    return NextResponse.redirect(new URL(returnTo, appBaseUrl));
   },
 });

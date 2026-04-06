@@ -15,10 +15,18 @@ export class TokenVaultService {
   private readonly clientId: string;
   private readonly clientSecret: string;
 
-  constructor(config: ConfigService) {
+  constructor(private readonly config: ConfigService) {
     this.domain = config.getOrThrow<string>('AUTH0_DOMAIN');
     this.clientId = config.getOrThrow<string>('AUTH0_CLIENT_ID');
     this.clientSecret = config.getOrThrow<string>('AUTH0_CLIENT_SECRET');
+  }
+
+  private resolveAuth0Connection(provider: 'slack' | 'github'): string {
+    if (provider === 'slack') {
+      return this.config.get<string>('AUTH0_CONNECTION_SLACK') ?? 'sign-in-with-slack';
+    }
+
+    return this.config.get<string>('AUTH0_CONNECTION_GITHUB') ?? 'github';
   }
 
   /**
@@ -49,7 +57,7 @@ export class TokenVaultService {
             'urn:auth0:params:oauth:token-type:connection_access_token',
           // WHY: 'connection' must match the Social Connection name configured
           // in Auth0 Dashboard → Authentication → Social
-          connection: provider,
+          connection: this.resolveAuth0Connection(provider),
           subject: userId,
         }),
       },

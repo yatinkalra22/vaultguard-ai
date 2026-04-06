@@ -107,62 +107,143 @@ AUTH0_DOMAIN=vaultguard-dev.us.auth0.com
 AUTH0_AUDIENCE=https://api.vaultguard.ai
 AUTH0_CLIENT_ID=your_client_id_here
 AUTH0_CLIENT_SECRET=your_client_secret_here
+AUTH0_WEB_CLIENT_ID=your_vaultguard_web_client_id
+AUTH0_CONNECTION_SLACK=slack-custom
+AUTH0_CONNECTION_GITHUB=github
+AUTH0_CONNECTION_SCOPE_SLACK=users:read,users:read.email,team:read,channels:read
+AUTH0_CONNECTION_SCOPE_GITHUB=read:org,read:user,repo,read:audit_log,admin:org
+AUTH0_ORGANIZATION_ID=org_xxxxxxxxxxxxxxxx
 ```
+
+If your Auth0 Social Connection identifier differs, set these values to match exactly.
+If Slack returns "No scopes requested", verify `AUTH0_CONNECTION_SCOPE_SLACK` is present in your real `apps/api/.env` and restart the API.
+If you still hit `no_organization` in local/dev, set `AUTH0_ORGANIZATION_ID` as a fallback org id.
+If you hit "Callback URL mismatch" on Auth0 `/authorize`, set `AUTH0_WEB_CLIENT_ID` to the **VaultGuard Web** app client ID and ensure that app allows `http://localhost:3000/auth/callback`.
 
 ---
 
 ## Step 3: Auth0 — Enable Token Vault & Connected Accounts
 
 Token Vault stores Slack/GitHub OAuth tokens securely in Auth0's infrastructure.
+VaultGuard uses the SDK's `/auth/connect` endpoint (My Account API) to let users
+connect their accounts — this requires Token Vault, the My Account API, and MRRT
+to all be enabled.
 
 > In this tenant, Token Vault is enabled from the web application settings, not from the AI Agents landing page.
 > Social Connections for Slack/GitHub are under **Authentication** → **Social** in the Auth0 dashboard, not under **AI Agents**.
 
-### 3a. Enable Token Vault
+### 3a. Enable Token Vault on the Application
 
 1. Go to **https://manage.auth0.com/dashboard**
 2. Left sidebar → **Applications** → **VaultGuard Web**
 3. Open **Advanced Settings** → **Grant Types**
 4. Enable **Token Vault**
-5. If you use CIBA, keep **Client Initiated Backchannel Authentication (CIBA)** enabled here as well
+5. Enable **Token Exchange** (`urn:ietf:params:oauth:grant-type:token-exchange`)
+6. If you use CIBA, keep **Client Initiated Backchannel Authentication (CIBA)** enabled here as well
 
-### 3b. Add Slack Connected Account
+### 3b. Activate the My Account API
+
+The SDK's `/auth/connect` endpoint calls Auth0's My Account API to initiate the
+Connected Account flow. This API must be explicitly activated.
+
+1. Left sidebar → **Applications** → **APIs**
+2. Find the **Auth0 My Account** API (identifier: `https://YOUR_TENANT.us.auth0.com/me/`)
+   - If you don't see it, look for a banner at the top of the APIs page that says "Activate My Account API" and click it
+3. Click on the My Account API → **Machine to Machine Applications** tab
+4. Toggle **VaultGuard Web** to **Authorized**
+5. Expand VaultGuard Web's permissions and enable these scopes:
+   - `create:me:connected_accounts`
+   - `read:me:connected_accounts`
+   - `delete:me:connected_accounts`
+6. Go to the **Settings** tab:
+   - Enable **Allow Skipping User Consent**
+   - Under **Multi-Resource Refresh Token (MRRT)**, click **Edit Configuration** and enable the MRRT toggle
+
+> **If `/auth/connect` returns "An unexpected error occurred while trying to initiate the connect account flow"**, the My Account API is not activated or the application is not authorized. Double-check steps 2–6 above.
+
+### 3c. Add Slack Connected Account
+
+> **Important — do not use Auth0's built-in Slack connections.**
+> Both the built-in **"Sign in with Slack"** and **"Slack OAuth 2.0"** connections are
+> incompatible with Token Vault:
+> - "Sign in with Slack" uses SIWS user scopes. Adding Web API scopes alongside them
+>   causes Slack to return `invalid_scope` (scope conflict).
+> - "Slack OAuth 2.0" / `oauth.v2.access` returns `token_type: "bot"`. Auth0 Token
+>   Vault rejects non-bearer token types with `not_allowed_token_type`.
+>
+> The working approach is a **custom social connection** using Slack's user-centric
+> OAuth endpoint (`v2_user`), which returns a standard `token_type: "bearer"` user
+> token that Auth0 Token Vault accepts.
 
 1. Left sidebar → **Authentication** → **Social**
-2. Select or click **Add Connection**
-3. Choose **Sign in with Slack**
-  - Do not use the deprecated **Slack OAuth 2.0** connection if **Sign in with Slack** is available.
-  - Purpose: choose **Connected Accounts for Token Vault**.
-  - Do not choose **Authentication** unless you want Slack to be a login provider.
-  - Under **Applications using this connection**, enable **VaultGuard Web** only.
-4. Add these scopes:
-   - `admin.users:read`
-   - `admin.apps:read`
-   - `users:read`
-   - `users:read.email`
-   - `team:read`
-   - `channels:read`
-5. Save
+2. Click **Create Custom** (scroll to the bottom of the connection type list)
+3. Fill in the connection settings:
 
-> **Where to get Slack app credentials:** https://api.slack.com/apps → Create New App → From Scratch → **Basic Information** → **App Credentials**. Copy the Client ID and Client Secret into the Connected Account config in Auth0.
-> If you land on Slack's token page, that is the wrong screen for Auth0. Use **OAuth & Permissions** only for bot token scopes.
+   | Field | Value |
+   |---|---|
+   | **Name** | `slack-custom` |
+   | **Authorization URL** | `https://slack.com/oauth/v2_user/authorize` |
+   | **Token URL** | `https://slack.com/api/oauth.v2.user.access` |
+   | **Scope** | `users:read users:read.email team:read channels:read` |
+   | **Client ID** | From your Slack app (see below) |
+   | **Client Secret** | From your Slack app (see below) |
 
-### 3c. Add GitHub Connected Account
+4. Paste this **Fetch User Profile Script**:
+
+   ```javascript
+   function(accessToken, ctx, cb) {
+     request.get('https://slack.com/api/auth.test', {
+       headers: { 'Authorization': 'Bearer ' + accessToken },
+       json: true
+     }, function(err, resp, body) {
+       if (err) return cb(err);
+       if (!body.ok) return cb(new Error(body.error));
+       cb(null, {
+         user_id: body.user_id,
+         name: body.user,
+         team_id: body.team_id
+       });
+     });
+   }
+   ```
+
+5. Set **Purpose** to **Connected Accounts for Token Vault**
+6. Under **Applications using this connection**, enable **VaultGuard Web** only
+7. Under **Connection Permissions**, enable **Offline Access** (required — without this, Token Vault cannot store refresh tokens and token exchange will fail)
+8. Save
+
+Set the matching env var in `apps/api/.env`:
+
+```env
+AUTH0_CONNECTION_SLACK=slack-custom
+AUTH0_CONNECTION_SCOPE_SLACK=users:read,users:read.email,team:read,channels:read
+```
+
+> **Where to get Slack app credentials:** https://api.slack.com/apps → Create New App → From Scratch → **Basic Information** → **App Credentials**. Copy the Client ID and Client Secret into the connection settings above.
+> In Slack **OAuth & Permissions**, add this redirect URL exactly: `https://vaultguard-ai-dev.us.auth0.com/login/callback`.
+> Do **not** add `chat:write` to the scope — it is a bot-only scope and will cause `invalid_scope` in the user token flow.
+
+### 3d. Add GitHub Connected Account
 
 1. Still in **Authentication** → **Social**
 2. Select or click **Add Connection**
 3. Choose **GitHub**
+   - Purpose: choose **Connected Accounts for Token Vault**.
+   - Under **Applications using this connection**, enable **VaultGuard Web** only.
 4. Add these scopes:
    - `read:org`
    - `read:user`
    - `repo`
    - `read:audit_log`
    - `admin:org`
-4. Save
+5. Under **Connection Permissions**, enable **Offline Access** (required — see 3c step 5)
+6. Save
 
 > **Where to create GitHub OAuth app credentials:** https://github.com/settings/developers → OAuth Apps → New OAuth App. Set the callback URL to `https://YOUR_AUTH0_DOMAIN/login/callback`. Copy Client ID and Client Secret into the Connected Account config in Auth0.
 > Use `http://localhost:3000` as the GitHub app homepage URL during local development.
 > For this tenant, the GitHub OAuth app authorization callback URL is `https://vaultguard-ai-dev.us.auth0.com/login/callback`.
+
+> **"The connection is not active for authentication" on Try Connection:** This is expected. The "Try Connection" button tests the authentication flow, not the Connected Accounts flow. Your connection is configured correctly — use the in-app "Connect" button to test the Connected Accounts flow instead.
 
 No extra env vars needed — Token Vault uses the same `AUTH0_CLIENT_ID` and `AUTH0_CLIENT_SECRET` from Step 2.
 

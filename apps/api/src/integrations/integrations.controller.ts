@@ -9,17 +9,25 @@ import {
   Request,
   UseGuards,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { IntegrationsService } from './integrations.service';
 
 @Controller('integrations')
 @UseGuards(JwtAuthGuard)
 export class IntegrationsController {
-  constructor(private readonly integrations: IntegrationsService) {}
+  constructor(
+    private readonly integrations: IntegrationsService,
+    private readonly config: ConfigService,
+  ) {}
+
+  private resolveOrgId(req: { user: { orgId?: string } }): string | undefined {
+    return req.user.orgId ?? this.config.get<string>('AUTH0_ORGANIZATION_ID');
+  }
 
   @Get()
   async listIntegrations(@Request() req: { user: { orgId?: string } }) {
-    const orgId = req.user.orgId;
+    const orgId = this.resolveOrgId(req);
     if (!orgId) return [];
 
     return this.integrations.listIntegrations(orgId);
@@ -30,7 +38,7 @@ export class IntegrationsController {
     @Param('provider') provider: string,
     @Request() req: { user: { orgId?: string } },
   ) {
-    const orgId = req.user.orgId;
+    const orgId = this.resolveOrgId(req);
     if (!orgId) {
       // WHY: Must throw (not return) so the frontend catch block runs.
       // Returning { error } gives HTTP 200 — the frontend destructures `url`,
@@ -60,7 +68,7 @@ export class IntegrationsController {
     @Param('id') id: string,
     @Request() req: { user: { orgId?: string } },
   ) {
-    const orgId = req.user.orgId;
+    const orgId = this.resolveOrgId(req);
     if (!orgId) {
       throw new ForbiddenException({
         code: 'no_organization',
