@@ -66,14 +66,29 @@ export function FindingsChart() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // WHY: Track last JSON to skip re-renders when data hasn't changed.
+    // Prevents visible chart flicker on every poll cycle.
+    let lastAnalyticsJson = '';
+    let lastFindingsJson = '';
+
     const fetchAnalytics = async () => {
       try {
         const [dashboardAnalytics, findings] = await Promise.all([
           api.get<FindingsAnalytics>('findings/analytics/dashboard'),
           api.get<Finding[]>('findings', { status: 'open', severity: 'all' }),
         ]);
-        setAnalytics(dashboardAnalytics);
-        setOpenFindings(findings);
+
+        const analyticsJson = JSON.stringify(dashboardAnalytics);
+        const findingsJson = JSON.stringify(findings);
+
+        if (analyticsJson !== lastAnalyticsJson) {
+          lastAnalyticsJson = analyticsJson;
+          setAnalytics(dashboardAnalytics);
+        }
+        if (findingsJson !== lastFindingsJson) {
+          lastFindingsJson = findingsJson;
+          setOpenFindings(findings);
+        }
       } catch (error: unknown) {
         showErrorToast(error, 'Failed to fetch analytics');
       } finally {
@@ -82,7 +97,8 @@ export function FindingsChart() {
     };
 
     fetchAnalytics();
-    const interval = setInterval(fetchAnalytics, 10000); // Refresh every 10 seconds
+    // WHY: 30s poll avoids flicker; event-driven refresh handles immediate updates
+    const interval = setInterval(fetchAnalytics, 30_000);
 
     return () => clearInterval(interval);
   }, []);
@@ -141,8 +157,8 @@ export function FindingsChart() {
       {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Severity Breakdown Pie Chart */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Findings by Severity</h3>
+        <div className="bg-card rounded-lg border border-border p-6">
+          <h3 className="text-lg font-semibold text-foreground mb-4">Findings by Severity</h3>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
@@ -163,9 +179,10 @@ export function FindingsChart() {
               <Tooltip
                 formatter={(value) => value}
                 contentStyle={{
-                  backgroundColor: '#ffffff',
-                  border: '1px solid #e5e7eb',
+                  backgroundColor: '#1f2937',
+                  border: '1px solid #374151',
                   borderRadius: '0.5rem',
+                  color: '#f9fafb',
                 }}
               />
             </PieChart>
@@ -173,50 +190,52 @@ export function FindingsChart() {
         </div>
 
         {/* Category Breakdown Bar Chart */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Findings by Category</h3>
+        <div className="bg-card rounded-lg border border-border p-6">
+          <h3 className="text-lg font-semibold text-foreground mb-4">Findings by Category</h3>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={categoryData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} />
-              <YAxis />
+              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+              <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} tick={{ fill: '#9ca3af' }} />
+              <YAxis tick={{ fill: '#9ca3af' }} />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: '#ffffff',
-                  border: '1px solid #e5e7eb',
+                  backgroundColor: '#1f2937',
+                  border: '1px solid #374151',
                   borderRadius: '0.5rem',
+                  color: '#f9fafb',
                 }}
               />
-              <Bar dataKey="count" fill="#3b82f6" />
+              <Bar dataKey="count" fill="#06b6d4" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
       </div>
 
       {/* Findings Trend Line Chart */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-          <TrendingUp className="w-5 h-5 text-blue-600" />
+      <div className="bg-card rounded-lg border border-border p-6">
+        <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+          <TrendingUp className="w-5 h-5 text-primary" />
           Findings Trend (7 Days)
         </h3>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={analytics.findingsTrend}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="date" />
-            <YAxis />
+            <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+            <XAxis dataKey="date" tick={{ fill: '#9ca3af' }} />
+            <YAxis tick={{ fill: '#9ca3af' }} />
             <Tooltip
               contentStyle={{
-                backgroundColor: '#ffffff',
-                border: '1px solid #e5e7eb',
+                backgroundColor: '#1f2937',
+                border: '1px solid #374151',
                 borderRadius: '0.5rem',
+                color: '#f9fafb',
               }}
             />
-            <Legend />
+            <Legend wrapperStyle={{ color: '#9ca3af' }} />
             <Line
               type="monotone"
               dataKey="total"
-              stroke="#3b82f6"
-              dot={{ fill: '#3b82f6', r: 4 }}
+              stroke="#06b6d4"
+              dot={{ fill: '#06b6d4', r: 4 }}
               activeDot={{ r: 6 }}
               name="Total Findings"
             />
@@ -233,52 +252,52 @@ export function FindingsChart() {
       </div>
 
       {/* Top Risks Table */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-          <AlertTriangle className="w-5 h-5 text-red-600" />
+      <div className="bg-card rounded-lg border border-border p-6">
+        <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+          <AlertTriangle className="w-5 h-5 text-red-500" />
           Top Risks Requiring Attention
         </h3>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-border">
+            <thead>
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Risk Title
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Severity
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Resources
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Last Seen
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="divide-y divide-border">
               {analytics.topRisks.map((risk) => (
-                <tr key={risk.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                <tr key={risk.id} className="hover:bg-accent/50">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-foreground">
                     {risk.title}
                   </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                         className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
                         risk.severity === 'critical'
-                          ? 'bg-red-100 text-red-800'
+                          ? 'bg-red-500/20 text-red-400'
                           : risk.severity === 'high'
-                            ? 'bg-orange-100 text-orange-800'
-                            : 'bg-yellow-100 text-yellow-800'
+                            ? 'bg-orange-500/20 text-orange-400'
+                            : 'bg-yellow-500/20 text-yellow-400'
                       }`}
                     >
                       {risk.severity.charAt(0).toUpperCase() + risk.severity.slice(1)}
                     </span>
-                    </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                     {risk.affectedResources}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                     {risk.lastSeen}
                   </td>
                 </tr>
@@ -286,8 +305,8 @@ export function FindingsChart() {
             </tbody>
           </table>
         </div>
-        <div className="mt-4 text-sm text-gray-600">
-          Average remediation time: <span className="font-semibold">{analytics.remediationTimeAverage}h</span>
+        <div className="mt-4 text-sm text-muted-foreground">
+          Average remediation time: <span className="font-semibold text-foreground">{analytics.remediationTimeAverage}h</span>
         </div>
       </div>
     </div>

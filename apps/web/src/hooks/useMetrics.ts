@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { api } from '@/lib/api';
 
 export interface DashboardMetrics {
@@ -12,34 +12,50 @@ export interface DashboardMetrics {
   findingsTrend: Array<{ date: string; count: number }>;
 }
 
+// WHY: Poll at 30s to avoid visible flicker. Event-driven refresh handles
+// immediate updates (scan complete, remediation success).
+const POLL_INTERVAL_MS = 30_000;
+
 export function useMetrics() {
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const lastJsonRef = useRef<string>('');
 
   useEffect(() => {
-    // Fetch initial metrics
+    let isInitial = true;
+
     const fetchMetrics = async () => {
       try {
-        setLoading(true);
+        // WHY: Only show loading state on first fetch — subsequent polls
+        // should silently update to prevent UI flicker.
+        if (isInitial) setLoading(true);
+
         const data = await api.get<DashboardMetrics>('metrics/dashboard');
-        setMetrics(data);
+
+        // WHY: Skip setState if data hasn't changed to avoid re-renders
+        const json = JSON.stringify(data);
+        if (json !== lastJsonRef.current) {
+          lastJsonRef.current = json;
+          setMetrics(data);
+        }
+
         setError(null);
       } catch (err) {
         setError(err instanceof Error ? err : new Error('Failed to fetch metrics'));
       } finally {
-        setLoading(false);
+        if (isInitial) {
+          setLoading(false);
+          isInitial = false;
+        }
       }
     };
 
     fetchMetrics();
 
-    // Poll for updates every 5 seconds
-    // In production: upgrade to WebSocket for true real-time
-    const interval = setInterval(fetchMetrics, 5000);
+    const interval = setInterval(fetchMetrics, POLL_INTERVAL_MS);
 
-    // Listen for toast events that indicate metrics changed
-    // When scan completes or remediation succeeds, refresh metrics
+    // WHY: Event-driven refresh for immediate updates after user actions
     window.addEventListener('custom:metricsUpdated', fetchMetrics);
 
     return () => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { api, showErrorToast, showSuccessToast } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -32,11 +32,17 @@ function formatReason(reason: AlertReason): string {
 export function AlertHistoryPanel() {
   const [incidents, setIncidents] = useState<AlertIncident[]>([]);
   const [loading, setLoading] = useState(true);
+  const lastJsonRef = useRef<string>('');
 
   const fetchHistory = useCallback(async () => {
     try {
       const data = await api.get<AlertIncident[]>("alerts/history");
-      setIncidents(data);
+      // WHY: Skip setState when data hasn't changed to prevent flicker
+      const json = JSON.stringify(data);
+      if (json !== lastJsonRef.current) {
+        lastJsonRef.current = json;
+        setIncidents(data);
+      }
     } catch (err: unknown) {
       showErrorToast(err, "load_alert_history");
     } finally {
@@ -52,7 +58,7 @@ export function AlertHistoryPanel() {
     };
 
     window.addEventListener("custom:alertSettingsUpdated", onRefresh);
-    const interval = setInterval(fetchHistory, 10000);
+    const interval = setInterval(fetchHistory, 30_000);
 
     return () => {
       clearInterval(interval);

@@ -6,17 +6,19 @@
 
 :root {
   /* Security-focused dark palette */
-  --background: #0B0F1A;
-  --foreground: #F9FAFB;
-  --card: #111827;
-  --card-foreground: #F9FAFB;
-  --border: #1F2937;
-  --primary: #06B6D4;
-  --primary-foreground: #0B0F1A;
-  --muted: #1F2937;
-  --muted-foreground: #9CA3AF;
-  --accent: #1F2937;
-  --accent-foreground: #F9FAFB;
+  --background: #03050D;
+  --foreground: #F5F7FF;
+  --card: rgba(12, 18, 42, 0.9);
+  --card-foreground: #F5F7FF;
+  --border: rgba(113, 137, 255, 0.2);
+  --primary: #7189FF;
+  --primary-foreground: #050816;
+  --secondary: #624CAB;
+  --secondary-foreground: #F5F7FF;
+  --muted: rgba(15, 21, 43, 0.94);
+  --muted-foreground: #AAB1D6;
+  --accent: rgba(98, 76, 171, 0.22);
+  --accent-foreground: #F5F7FF;
   --destructive: #EF4444;
 
   /* Semantic risk colors */
@@ -35,6 +37,8 @@
   --color-border: var(--border);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
@@ -44,9 +48,46 @@
   --font-mono: var(--font-geist-mono);
 }
 
+html {
+  color-scheme: dark;
+  background:
+    radial-gradient(circle at top left, rgba(113, 137, 255, 0.22), transparent 30%),
+    radial-gradient(circle at 85% 15%, rgba(98, 76, 171, 0.22), transparent 26%),
+    radial-gradient(circle at 50% 100%, rgba(113, 137, 255, 0.12), transparent 34%),
+    linear-gradient(180deg, #070b19 0%, #03050D 52%, #02030A 100%);
+}
+
 body {
-  background: var(--background);
+  position: relative;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 18% 20%, rgba(113, 137, 255, 0.18), transparent 24%),
+    radial-gradient(circle at 82% 14%, rgba(98, 76, 171, 0.2), transparent 22%),
+    radial-gradient(circle at 50% 90%, rgba(11, 16, 39, 0.9), transparent 42%),
+    linear-gradient(180deg, rgba(8, 12, 28, 0.98) 0%, rgba(3, 5, 13, 0.99) 100%);
   color: var(--foreground);
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 72px 72px;
+  mask-image: radial-gradient(circle at center, black 58%, transparent 100%);
+  opacity: 0.22;
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(135deg, rgba(113, 137, 255, 0.08), rgba(98, 76, 171, 0.1));
+  mix-blend-mode: screen;
+  opacity: 0.45;
 }
 
 /* WHY: Minimal animation utilities for toasts and mobile sidebar.

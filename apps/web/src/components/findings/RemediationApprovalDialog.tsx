@@ -35,7 +35,6 @@ export function RemediationApprovalDialog({
   );
   const [approving, setApproving] = useState(false);
 
-  // Fetch available remediation actions
   const handleSelectFinding = async (findingId: string) => {
     const newSelected = new Set(selectedFindings);
     if (newSelected.has(findingId)) {
@@ -57,7 +56,7 @@ export function RemediationApprovalDialog({
           : `remediation-batch-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 
       const result = await api.post<BatchApproveResponse>(
-        '/remediations/batch-approve',
+        'remediations/batch-approve',
         {
           findingIds: Array.from(selectedFindings),
         },
@@ -92,54 +91,54 @@ export function RemediationApprovalDialog({
   const severityColor = (severity: FindingSeverity) => {
     switch (severity) {
       case 'critical':
-        return 'bg-red-100 text-red-800 border-red-300';
+        return 'bg-red-500/20 text-red-400 border-red-500/30';
       case 'high':
-        return 'bg-orange-100 text-orange-800 border-orange-300';
+        return 'bg-orange-500/20 text-orange-400 border-orange-500/30';
       case 'medium':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-300';
+        return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
       default:
-        return 'bg-green-100 text-green-800 border-green-300';
+        return 'bg-green-500/20 text-green-400 border-green-500/30';
     }
   };
 
   const riskColor = (risk: string) => {
     switch (risk) {
       case 'high':
-        return 'text-red-600';
+        return 'text-red-400';
       case 'medium':
-        return 'text-yellow-600';
+        return 'text-yellow-400';
       default:
-        return 'text-green-600';
+        return 'text-green-400';
     }
   };
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-card rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-border">
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-gray-200 p-4 sm:p-6 flex items-center justify-between">
+        <div className="sticky top-0 bg-card border-b border-border p-4 sm:p-6 flex items-center justify-between">
           <div>
-            <h2 className="text-lg sm:text-xl font-bold text-gray-900">
+            <h2 className="text-lg sm:text-xl font-bold text-foreground">
               Review Remediation Actions
             </h2>
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-sm text-muted-foreground mt-1">
               {selectedFindings.size} of {findings.length} findings selected
             </p>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 text-2xl"
+            className="text-muted-foreground hover:text-foreground text-2xl"
           >
             ×
           </button>
         </div>
 
         {/* Findings List */}
-        <div className="divide-y divide-gray-200">
+        <div className="divide-y divide-border">
           {findings.map((finding) => (
             <div
               key={finding.id}
-              className="p-3 sm:p-4 hover:bg-gray-50 cursor-pointer transition"
+              className="p-3 sm:p-4 hover:bg-accent/50 cursor-pointer transition"
               onClick={() => handleSelectFinding(finding.id)}
             >
               <div className="flex items-start gap-3">
@@ -148,11 +147,11 @@ export function RemediationApprovalDialog({
                   checked={selectedFindings.has(finding.id)}
                   onChange={() => handleSelectFinding(finding.id)}
                   onClick={(e) => e.stopPropagation()}
-                  className="mt-1 w-5 h-5 rounded border-gray-300 text-blue-600 cursor-pointer"
+                  className="mt-1 w-5 h-5 rounded border-border text-primary cursor-pointer"
                 />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start gap-2 flex-wrap">
-                    <h3 className="font-semibold text-gray-900 text-sm sm:text-base flex-1">
+                    <h3 className="font-semibold text-foreground text-sm sm:text-base flex-1">
                       {finding.title}
                     </h3>
                     <span
@@ -166,12 +165,12 @@ export function RemediationApprovalDialog({
                   </div>
 
                   {/* Remediation Action Preview */}
-                  <div className="mt-2 p-2 bg-blue-50 rounded space-y-1 text-xs sm:text-sm">
-                    <p className="text-gray-700">
-                      <span className="font-semibold">Recommended Fix:</span> Auto-revoke
+                  <div className="mt-2 p-2 bg-primary/10 rounded space-y-1 text-xs sm:text-sm">
+                    <p className="text-muted-foreground">
+                      <span className="font-semibold text-foreground">Recommended Fix:</span> Auto-revoke
                       exposed credentials and rotate secrets
                     </p>
-                    <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 text-gray-600">
+                    <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 text-muted-foreground">
                       <span>⏱ 5-10 min</span>
                       <span className={`font-semibold ${riskColor('low')}`}>
                         Low Risk
@@ -187,9 +186,9 @@ export function RemediationApprovalDialog({
 
         {/* Safety Warnings */}
         {selectedFindings.size > 5 && (
-          <div className="mx-4 sm:mx-6 mt-4 p-3 sm:p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex gap-3">
-            <AlertTriangle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
-            <div className="text-sm text-yellow-800">
+          <div className="mx-4 sm:mx-6 mt-4 p-3 sm:p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg flex gap-3">
+            <AlertTriangle className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
+            <div className="text-sm text-yellow-300">
               <p className="font-semibold">Bulk remediation notice</p>
               <p className="mt-1">
                 You are remediating {selectedFindings.size} findings. Ensure
@@ -200,17 +199,17 @@ export function RemediationApprovalDialog({
         )}
 
         {/* Footer */}
-        <div className="sticky bottom-0 bg-white border-t border-gray-200 px-4 sm:px-6 py-3 sm:py-4 flex gap-3 justify-end">
+        <div className="sticky bottom-0 bg-card border-t border-border px-4 sm:px-6 py-3 sm:py-4 flex gap-3 justify-end">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm font-medium"
+            className="px-4 py-2 text-muted-foreground border border-border rounded-lg hover:bg-accent/50 text-sm font-medium"
           >
             Cancel
           </button>
           <button
             onClick={handleApproveRemediations}
             disabled={selectedFindings.size === 0 || approving}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 text-sm font-medium flex items-center gap-2"
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 text-sm font-medium flex items-center gap-2"
           >
             {approving ? (
               <>

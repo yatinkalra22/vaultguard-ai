@@ -15,9 +15,9 @@ type TimelineEvent = {
 };
 
 const typeColor: Record<TimelineEvent["type"], string> = {
-  scan: "bg-blue-100 text-blue-700 border-0",
-  alert: "bg-red-100 text-red-700 border-0",
-  audit: "bg-slate-100 text-slate-700 border-0",
+  scan: "bg-blue-500/20 text-blue-400 border-0",
+  alert: "bg-red-500/20 text-red-400 border-0",
+  audit: "bg-slate-500/20 text-slate-400 border-0",
 };
 
 export function IncidentTimelinePanel() {
@@ -25,10 +25,18 @@ export function IncidentTimelinePanel() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // WHY: Track last JSON to skip re-renders when data hasn't changed,
+    // preventing visible flicker on every poll cycle.
+    let lastJson = '';
+
     const load = async () => {
       try {
         const data = await api.get<TimelineEvent[]>("dashboard/timeline");
-        setEvents(data);
+        const json = JSON.stringify(data);
+        if (json !== lastJson) {
+          lastJson = json;
+          setEvents(data);
+        }
       } catch {
         setEvents([]);
       } finally {
@@ -37,7 +45,7 @@ export function IncidentTimelinePanel() {
     };
 
     load();
-    const interval = setInterval(load, 10000);
+    const interval = setInterval(load, 30_000);
     return () => clearInterval(interval);
   }, []);
 
