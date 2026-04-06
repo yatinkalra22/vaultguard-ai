@@ -68,7 +68,6 @@ export function DashboardMetricsDisplay({ metrics }: DashboardMetricsProps) {
       <MetricCard
         label="Total Findings"
         value={metrics.totalFindings}
-        trend={2}
         icon={<AlertCircle className="w-5 h-5" />}
         color="red"
       />
@@ -77,7 +76,6 @@ export function DashboardMetricsDisplay({ metrics }: DashboardMetricsProps) {
       <MetricCard
         label="Critical Findings"
         value={metrics.criticalFindings}
-        trend={-15}
         icon={<Shield className="w-5 h-5" />}
         color="red"
       />
@@ -86,7 +84,6 @@ export function DashboardMetricsDisplay({ metrics }: DashboardMetricsProps) {
       <MetricCard
         label="Remediations Completed"
         value={metrics.remediationsCompleted}
-        trend={8}
         icon={<CheckCircle2 className="w-5 h-5" />}
         color="emerald"
       />
@@ -95,7 +92,6 @@ export function DashboardMetricsDisplay({ metrics }: DashboardMetricsProps) {
       <MetricCard
         label="Remediations Pending"
         value={metrics.remediationsPending}
-        trend={-3}
         icon={<Clock className="w-5 h-5" />}
         color="amber"
       />
@@ -104,7 +100,6 @@ export function DashboardMetricsDisplay({ metrics }: DashboardMetricsProps) {
       <MetricCard
         label="Violations Prevented"
         value={metrics.violationsPrevented}
-        trend={12}
         icon={<Activity className="w-5 h-5" />}
         color="emerald"
       />
