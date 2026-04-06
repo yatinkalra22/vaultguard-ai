@@ -69,8 +69,8 @@ export function FindingsChart() {
     const fetchAnalytics = async () => {
       try {
         const [dashboardAnalytics, findings] = await Promise.all([
-          api.get<FindingsAnalytics>('/findings/analytics/dashboard'),
-          api.get<Finding[]>('/findings', { status: 'open', severity: 'all' }),
+          api.get<FindingsAnalytics>('findings/analytics/dashboard'),
+          api.get<Finding[]>('findings', { status: 'open', severity: 'all' }),
         ]);
         setAnalytics(dashboardAnalytics);
         setOpenFindings(findings);

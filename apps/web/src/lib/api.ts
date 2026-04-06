@@ -7,6 +7,12 @@ import { telemetry } from "@/lib/telemetry";
 
 const BASE = "/api/proxy";
 
+// WHY: Strips leading slashes from paths so callers can use either
+// "findings" or "/findings" without causing double-slash URLs.
+function normalizePath(path: string): string {
+  return path.replace(/^\/+/, "");
+}
+
 export const ERROR_CODES = {
   UNAUTHORIZED: "unauthorized",
   FORBIDDEN: "forbidden",
@@ -224,8 +230,9 @@ async function handleResponse<T>(res: Response): Promise<T> {
 
 export const api = {
   async get<T>(path: string, params?: Record<string, string>): Promise<T> {
+    const p = normalizePath(path);
     const query = params ? `?${new URLSearchParams(params)}` : "";
-    return requestWithRetry<T>(() => fetch(`${BASE}/${path}${query}`));
+    return requestWithRetry<T>(() => fetch(`${BASE}/${p}${query}`));
   },
 
   async post<T>(
@@ -233,8 +240,9 @@ export const api = {
     body?: unknown,
     options?: { headers?: Record<string, string> },
   ): Promise<T> {
+    const p = normalizePath(path);
     return requestWithRetry<T>(() =>
-      fetch(`${BASE}/${path}`, {
+      fetch(`${BASE}/${p}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -246,8 +254,9 @@ export const api = {
   },
 
   async patch<T>(path: string, body?: unknown): Promise<T> {
+    const p = normalizePath(path);
     return requestWithRetry<T>(() =>
-      fetch(`${BASE}/${path}`, {
+      fetch(`${BASE}/${p}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: body ? JSON.stringify(body) : undefined,
@@ -256,7 +265,8 @@ export const api = {
   },
 
   async del<T>(path: string): Promise<T> {
-    return requestWithRetry<T>(() => fetch(`${BASE}/${path}`, { method: "DELETE" }));
+    const p = normalizePath(path);
+    return requestWithRetry<T>(() => fetch(`${BASE}/${p}`, { method: "DELETE" }));
   },
 };
 
