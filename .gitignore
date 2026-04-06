@@ -19,6 +19,9 @@ dist/
 *.swo
 .claude/*
 
+# Supabase CLI local state
+supabase/.temp/
+
 # OS
 .DS_Store
 Thumbs.db

@@ -43,7 +43,12 @@ cp apps/api/.env.example apps/api/.env
 # Step-by-step guides: docs/FRONTEND_ENV_SETUP.md & docs/BACKEND_ENV_SETUP.md
 
 # 4. Set up the database
-# Run scripts/setup-database.sql in your Supabase SQL editor
+# Install the Supabase CLI if needed: pnpm add -D supabase
+# Login and link once per machine/project:
+#   pnpm exec supabase login
+#   pnpm exec supabase link --project-ref <your-project-ref>
+# Push migrations:
+#   pnpm db:push
 # Then run scripts/setup-retention.sql (required for retention jobs)
 # If upgrading an existing environment with pre-alert schema, also run scripts/setup-alerting.sql
 # Optionally run scripts/seed-database.sql for test data
@@ -60,11 +65,11 @@ pnpm dev
 ## Setup Decision Path
 
 - Fresh install:
-  - Run `scripts/setup-database.sql`
+  - Run `pnpm db:push`
   - Run `scripts/setup-retention.sql`
   - Optionally run `scripts/seed-database.sql`
 - Existing install upgrade:
-  - Run `scripts/setup-database.sql`
+  - Run `pnpm db:push`
   - Run `scripts/setup-alerting.sql`
   - Run `scripts/setup-retention.sql`
 
@@ -224,9 +229,13 @@ exports.onExecutePostLogin = async (event, api) => {
 ## Supabase Setup
 
 1. Create a new project at [app.supabase.com](https://app.supabase.com)
-2. Run `scripts/setup-database.sql` in the SQL Editor
-3. In Supabase: **Settings → Data API** copy **Project URL**
-4. In Supabase: **Settings → API Keys** copy either legacy **service_role** or a **Secret key** for backend use
+2. Install the Supabase CLI: `pnpm add -D supabase`
+3. Login and link the project:
+  - `pnpm exec supabase login`
+  - `pnpm exec supabase link --project-ref <your-project-ref>`
+4. Push the migrations: `pnpm db:push`
+5. In Supabase: **Settings → Data API** copy **Project URL**
+6. In Supabase: **Settings → API Keys** copy either legacy **service_role** or a **Secret key** for backend use
 
 ## Slack App Setup
 
@@ -252,9 +261,9 @@ exports.onExecutePostLogin = async (event, api) => {
 | Script | Purpose |
 |--------|---------|
 | `scripts/setup-local.sh` | Full local setup (prereqs, deps, build check) |
-| `scripts/setup-database.sql` | Idempotent database schema (run in Supabase SQL Editor) |
+| `pnpm db:push` | Apply Supabase migrations to the linked project |
 | `scripts/setup-alerting.sql` | Alerting migration for older databases (upgrade path) |
-| `scripts/setup-retention.sql` | Required retention functions/procedures (run after setup-database.sql) |
+| `scripts/setup-retention.sql` | Required retention functions/procedures (run after Supabase db push) |
 | `scripts/seed-database.sql` | Test data for local development |
 | `scripts/setup-fga-model.sh` | Deploy Auth0 FGA authorization model |
 | `scripts/deploy-web.sh` | Deploy frontend to Vercel (`--prod` for production) |

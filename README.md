@@ -73,8 +73,8 @@ cp apps/web/.env.example apps/web/.env.local
 cp apps/api/.env.example apps/api/.env
 # Fill in your keys — see docs/FRONTEND_ENV_SETUP.md & docs/BACKEND_ENV_SETUP.md
 
-# Set up database (run in Supabase SQL Editor)
-# scripts/setup-database.sql    — schema
+# Set up database (via Supabase CLI)
+# supabase/migrations/0001_initial_schema.sql  - schema migration
 # scripts/seed-demo.sql         — demo data (optional)
 
 # Deploy FGA authorization model
@@ -123,9 +123,11 @@ vaultguard-ai/
 │           └── common/     # Supabase + Token Vault services
 ├── packages/
 │   └── shared/             # Shared TypeScript types
+├── supabase/               # Supabase CLI project files
+│   └── migrations/
+│       └── 0001_initial_schema.sql # Database schema
 ├── scripts/
 │   ├── setup-local.sh      # Local dev setup
-│   ├── setup-database.sql  # Database schema
 │   ├── setup-retention.sql # Data retention policy (90d audit, 30d scans)
 │   ├── seed-database.sql   # Test data
 │   ├── seed-demo.sql       # Demo data (10 findings)
