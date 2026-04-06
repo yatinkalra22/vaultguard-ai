@@ -3,9 +3,9 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "dev": "nest start --watch",
+    "dev": "node --watch --watch-path src -r ts-node/register -r tsconfig-paths/register src/main.ts",
     "build": "nest build",
-    "start": "node dist/main",
+    "start": "node dist/main.js",
     "lint": "pnpm run lint:types && pnpm run lint:eslint",
     "lint:types": "tsc --noEmit",
     "lint:eslint": "eslint src --max-warnings=0"
@@ -26,6 +26,7 @@
     "axios": "^1.13.6",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
+    "express": "^5.2.1",
     "helmet": "^8.1.0",
     "jwks-rsa": "^4.0.1",
     "nestjs-pino": "^4.6.1",

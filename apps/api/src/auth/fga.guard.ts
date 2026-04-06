@@ -21,7 +21,10 @@ export class FgaGuard implements CanActivate {
     const user = request.user;
 
     if (!user?.sub || !user?.orgId) {
-      throw new ForbiddenException('Missing user or org context');
+      throw new ForbiddenException({
+        code: 'forbidden',
+        message: 'Missing user or org context',
+      });
     }
 
     const allowed = await this.fga.canApproveRemediation(
@@ -30,9 +33,10 @@ export class FgaGuard implements CanActivate {
     );
 
     if (!allowed) {
-      throw new ForbiddenException(
-        'You do not have permission to approve remediations for this organization',
-      );
+      throw new ForbiddenException({
+        code: 'forbidden',
+        message: 'You do not have permission to approve remediations for this organization',
+      });
     }
 
     return true;

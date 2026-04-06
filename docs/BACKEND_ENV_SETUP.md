@@ -19,8 +19,8 @@ Step-by-step guide to get every key/value for the backend. Follow in order — s
 | `FGA_STORE_ID` | Auth0 FGA Dashboard |
 | `FGA_CLIENT_ID` | Auth0 FGA Dashboard → Settings |
 | `FGA_CLIENT_SECRET` | Auth0 FGA Dashboard → Settings |
-| `SUPABASE_URL` | Supabase Dashboard → Project Settings → API |
-| `SUPABASE_SERVICE_ROLE_KEY` | Supabase Dashboard → Project Settings → API |
+| `SUPABASE_URL` | Supabase Dashboard → Settings → Data API (Project URL) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase Dashboard → Settings → API Keys (Legacy `service_role` or a new Secret key) |
 | `ANTHROPIC_API_KEY` | Anthropic Console → API Keys |
 | `FRONTEND_URL` | Set manually (`http://localhost:3000`) |
 | `AUTH0_BASE_URL` | Set manually (`http://localhost:3000`) |
@@ -45,6 +45,8 @@ AUTH0_BASE_URL=http://localhost:3000
 | `NODE_ENV` | `development` | Use `production` for deployed environments. Production enforces strict startup checks. |
 | `FRONTEND_URL` | `http://localhost:3000` | Must match your frontend URL exactly. Used for CORS whitelist. |
 | `AUTH0_BASE_URL` | `http://localhost:3000` | Used for auth redirect/callback flows. Usually same as FRONTEND_URL. |
+
+> Local dev default: web runs on `3000` and API runs on `4000`. Do not set backend `PORT` to `3000` while the web app is also on `3000`.
 
 ---
 
@@ -112,11 +114,15 @@ AUTH0_CLIENT_SECRET=your_client_secret_here
 
 Token Vault stores Slack/GitHub OAuth tokens securely in Auth0's infrastructure.
 
+> In this tenant, Token Vault is enabled from the web application settings, not from the AI Agents landing page.
+
 ### 3a. Enable Token Vault
 
 1. Go to **https://manage.auth0.com/dashboard**
-2. Left sidebar → **AI Agents** → **Token Vault**
-3. Click **Enable**
+2. Left sidebar → **Applications** → **VaultGuard Web**
+3. Open **Advanced Settings** → **Grant Types**
+4. Enable **Token Vault**
+5. If you use CIBA, keep **Client Initiated Backchannel Authentication (CIBA)** enabled here as well
 
 ### 3b. Add Slack Connected Account
 
@@ -181,11 +187,13 @@ Step-up auth requires MFA before any remediation action.
 
 ### 5b. Create the Step-Up Login Action
 
-1. Left sidebar → **Actions** → **Flows**
+1. Left sidebar → **Actions** → **Triggers**
 2. Click **Login**
 3. Click **+** (Add Action) → **Build from Scratch**
 4. Name: `VaultGuard Step-Up MFA`
 5. Paste this code:
+
+> If your tenant still shows **Flows** instead of **Triggers**, use the equivalent **Actions → Login** path for the login trigger.
 
 ```javascript
 exports.onExecutePostLogin = async (event, api) => {
@@ -271,17 +279,21 @@ FGA_CLIENT_SECRET=your_fga_client_secret
 
 ### 7b. Get Your Keys
 
-1. Left sidebar → **Project Settings** (gear icon at bottom)
-2. Click **API** under Configuration
+1. Left sidebar → **Settings** (gear icon) → **API Keys**
+2. For backend credentials, use one of these:
+  - **Legacy anon, service_role API keys** tab → copy **service_role**
+  - **Secret keys** section → create/copy a **secret key** (recommended in new UI)
+3. Left sidebar → **Settings** → **Data API**
+4. Copy the **Project URL**
 
 **Copy these values:**
 
 | Value on Screen | Env Variable | Example |
 |----------------|-------------|---------|
 | **Project URL** | `SUPABASE_URL` | `https://abcdefghijkl.supabase.co` |
-| **service_role key** (under "Project API keys") | `SUPABASE_SERVICE_ROLE_KEY` | `eyJhbGciOiJI...` |
+| **Legacy `service_role` key** or a **Secret key** | `SUPABASE_SERVICE_ROLE_KEY` | `eyJhbGciOiJI...` or `sb_secret_...` |
 
-> **WARNING:** The `service_role` key bypasses Row Level Security. Never expose it in frontend code or public repos.
+> **WARNING:** `service_role` and project secret keys bypass Row Level Security. Never expose them in frontend code or public repos.
 
 ### 7c. Set Up the Database Schema
 
@@ -294,7 +306,7 @@ FGA_CLIENT_SECRET=your_fga_client_secret
 
 ```env
 SUPABASE_URL=https://your-project-id.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_or_secret_key
 ```
 
 ---
@@ -357,7 +369,7 @@ FGA_CLIENT_SECRET=your_fga_client_secret
 
 # ── Supabase ──
 SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_or_secret_key
 
 # ── Anthropic (Claude AI) ──
 ANTHROPIC_API_KEY=sk-ant-api03-your-key-here

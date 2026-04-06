@@ -12,7 +12,7 @@ Step-by-step setup guides: [FRONTEND_ENV_SETUP.md](./FRONTEND_ENV_SETUP.md) | [B
 | Variable | Required | Description |
 |---|---|---|
 | `AUTH0_SECRET` | Yes | Session encryption secret. Generate with `openssl rand -hex 32`. |
-| `AUTH0_BASE_URL` | Yes | Public web origin (e.g., `http://localhost:3000`). |
+| `APP_BASE_URL` | Yes | Public web origin (e.g., `http://localhost:3000`). Auth0 SDK v4 uses this to build redirect URIs. |
 | `AUTH0_ISSUER_BASE_URL` | Yes | Auth0 tenant URL with `https://` prefix. |
 | `AUTH0_DOMAIN` | Optional | Auth0 domain without `https://`. Used as fallback. |
 | `AUTH0_CLIENT_ID` | Yes | Auth0 application client ID. |
@@ -34,7 +34,7 @@ Step-by-step setup guides: [FRONTEND_ENV_SETUP.md](./FRONTEND_ENV_SETUP.md) | [B
 | `FGA_CLIENT_ID` | Yes (for FGA) | OpenFGA API client ID. |
 | `FGA_CLIENT_SECRET` | Yes (for FGA) | OpenFGA API client secret. |
 | `SUPABASE_URL` | Yes | Supabase project URL. |
-| `SUPABASE_SERVICE_ROLE_KEY` | Yes | Supabase service role key (bypasses RLS — never expose in frontend). |
+| `SUPABASE_SERVICE_ROLE_KEY` | Yes | Supabase backend admin key from Settings → API Keys (legacy `service_role` or a new secret key). Bypasses RLS — never expose in frontend. |
 | `ANTHROPIC_API_KEY` | Yes | Anthropic API key for Claude AI risk analysis. |
 | `FRONTEND_URL` | Yes | Exact allowed CORS origin. Must match frontend URL (no trailing slash). |
 | `AUTH0_BASE_URL` | Yes | Web base URL for auth redirect/callback flows. |
@@ -61,7 +61,8 @@ The frontend and backend use the **same Auth0 application**, so these values are
 ## Common Pitfalls
 
 - `AUTH0_ISSUER_BASE_URL` needs `https://` prefix; `AUTH0_DOMAIN` does not.
-- `FRONTEND_URL` and `AUTH0_BASE_URL` usually share the same origin but protect different concerns (CORS vs. auth redirects).
+- Frontend uses `APP_BASE_URL` (read by Auth0 SDK v4); backend uses `AUTH0_BASE_URL` (for OAuth redirect URIs). Both point to the same web origin but are read by different SDKs.
+- `FRONTEND_URL` (backend CORS) and `AUTH0_BASE_URL` (backend auth redirects) usually share the same origin but protect different concerns.
 - Mismatch between `NEXT_PUBLIC_API_URL` and the backend's actual deploy URL causes proxy/API failures.
 - `NEXT_PUBLIC_*` vars require a full server restart after changes (Next.js inlines them at build time).
-- `SUPABASE_SERVICE_ROLE_KEY` bypasses Row Level Security — never expose in client-side code.
+- `SUPABASE_SERVICE_ROLE_KEY` bypasses Row Level Security (legacy `service_role` and new project secret keys both do this) — never expose in client-side code.

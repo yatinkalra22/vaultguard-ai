@@ -1,14 +1,16 @@
-import type { NextRequest } from "next/server";
-import { auth0 } from "./lib/auth0";
+import { auth0 } from "@/lib/auth0";
 
-// WHY: Next.js 16 deprecates middleware.ts in favor of proxy.ts.
-// This preserves existing auth behavior while following current framework standard.
-export async function proxy(request: NextRequest) {
+// WHY: Next.js 16 uses proxy.ts (not middleware.ts) for network interception.
+// Auth0 SDK v4 requires this broad matcher to handle /auth/login, /auth/callback,
+// /auth/logout, and rolling session refresh on every request.
+// Uses standard Request type (not NextRequest) per Next.js 16 proxy convention.
+// See: https://github.com/auth0/nextjs-auth0#on-nextjs-16
+export async function proxy(request: Request) {
   return await auth0.middleware(request);
 }
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico).*)",
+    "/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)",
   ],
 };

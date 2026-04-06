@@ -68,6 +68,16 @@ Checks:
 - Token Vault is enabled in tenant.
 - API has Auth0 client credentials configured.
 
+### Symptom: Auth0 sidebar does not show AI Agents
+
+Checks:
+
+- Confirm you are in the Auth0 tenant created for this project, not a different tenant.
+- Confirm you are signed in with an admin account for that tenant.
+- Refresh the dashboard after switching tenants.
+- If Token Vault is missing from AI Agents, check the web application: Applications → VaultGuard Web → Advanced Settings → Grant Types.
+- If it still is not visible, the tenant may not have Token Vault / Connected Accounts enabled yet.
+
 ### Symptom: scans run but no findings
 
 Checks:

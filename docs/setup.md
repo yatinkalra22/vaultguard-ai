@@ -99,7 +99,8 @@ pnpm dev
 - Algorithm: RS256
 
 ### 4. Enable Token Vault
-- Auth0 Dashboard → AI Agents → Token Vault → Enable
+- Auth0 Dashboard → Applications → VaultGuard Web → Advanced Settings → Grant Types → Token Vault
+- If available in your tenant, keep CIBA enabled in the same Grant Types section
 
 ### 5. Set up Connected Accounts
 - **Slack:** AI Agents → Connected Accounts → Add Connection → Slack
@@ -115,7 +116,8 @@ pnpm dev
 ### 7. Enable MFA + Step-Up Authentication
 - Security → Multi-factor Auth → Enable at least one factor (OTP recommended)
 - Set MFA policy to **"Never"** (MFA is triggered only by our Post-Login Action, not globally)
-- Actions → Flows → Login → Create a new Action with this code:
+- Actions → Triggers → Login → Create a new Action with this code:
+- If your tenant still shows Flows, use the equivalent Actions → Login path
 
 ```javascript
 exports.onExecutePostLogin = async (event, api) => {
@@ -146,7 +148,8 @@ exports.onExecutePostLogin = async (event, api) => {
 
 1. Create a new project at [app.supabase.com](https://app.supabase.com)
 2. Run `scripts/setup-database.sql` in the SQL Editor
-3. Note down: **Project URL** and **service_role key**
+3. In Supabase: **Settings → Data API** copy **Project URL**
+4. In Supabase: **Settings → API Keys** copy either legacy **service_role** or a **Secret key** for backend use
 
 ## Slack App Setup
 

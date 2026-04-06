@@ -55,7 +55,7 @@ export class StepUpGuard implements CanActivate {
       }
 
       throw new ForbiddenException({
-        error: 'step_up_required',
+        code: 'step_up_required',
         message: 'Multi-factor authentication is required for this action',
       });
     }
@@ -65,7 +65,7 @@ export class StepUpGuard implements CanActivate {
       const elapsed = Math.floor(Date.now() / 1000) - authTime;
       if (elapsed > this.maxAgeSec) {
         throw new ForbiddenException({
-          error: 'step_up_expired',
+          code: 'step_up_expired',
           message: `Authentication too old (${elapsed}s). Please re-verify identity.`,
         });
       }

@@ -11,7 +11,7 @@ Step-by-step guide to get every key/value for the frontend. The frontend only ne
 | Variable | Where to Get It |
 |----------|----------------|
 | `AUTH0_SECRET` | Generate locally with `openssl` |
-| `AUTH0_BASE_URL` | Set manually (`http://localhost:3000`) |
+| `APP_BASE_URL` | Set manually (`http://localhost:3000`) |
 | `AUTH0_ISSUER_BASE_URL` | Auth0 Dashboard → Applications → Settings |
 | `AUTH0_DOMAIN` | Auth0 Dashboard → Applications → Settings |
 | `AUTH0_CLIENT_ID` | Auth0 Dashboard → Applications → Settings |
@@ -42,14 +42,14 @@ AUTH0_SECRET=paste_the_generated_hex_here
 ## Step 2: Set Local URLs (No Dashboard Needed)
 
 ```env
-AUTH0_BASE_URL=http://localhost:3000
+APP_BASE_URL=http://localhost:3000
 NEXT_PUBLIC_API_URL=http://localhost:4000
 ```
 
 | Variable | Value | Notes |
 |----------|-------|-------|
-| `AUTH0_BASE_URL` | `http://localhost:3000` | The URL where your frontend runs. Auth0 SDK uses this for login/logout callbacks. |
-| `NEXT_PUBLIC_API_URL` | `http://localhost:4000` | The backend API URL. The `NEXT_PUBLIC_` prefix makes it available in browser code. |
+| `APP_BASE_URL` | `http://localhost:3000` | The URL where your frontend runs. Auth0 SDK uses this for login/logout callbacks. |
+| `NEXT_PUBLIC_API_URL` | `http://localhost:4000` | The backend API URL. Keep this on a different port from the web app (`3000`) in local dev. The `NEXT_PUBLIC_` prefix makes it available in browser code. |
 
 For production, these would be your deployed URLs (e.g., `https://vaultguard.ai` and `https://api.vaultguard.ai`).
 
@@ -88,7 +88,7 @@ Still on the Settings page, scroll down to **Application URIs**:
 
 | Field | Value (Local) | Value (Production) |
 |-------|--------------|-------------------|
-| **Allowed Callback URLs** | `http://localhost:3000/api/auth/callback` | `https://your-domain.com/api/auth/callback` |
+| **Allowed Callback URLs** | `http://localhost:3000/auth/callback` | `https://your-domain.com/auth/callback` |
 | **Allowed Logout URLs** | `http://localhost:3000` | `https://your-domain.com` |
 | **Allowed Web Origins** | `http://localhost:3000` | `https://your-domain.com` |
 
@@ -119,7 +119,7 @@ AUTH0_AUDIENCE=https://api.vaultguard.ai
 ```env
 # ── Auth0 ──
 AUTH0_SECRET=your_generated_hex_secret_here
-AUTH0_BASE_URL=http://localhost:3000
+APP_BASE_URL=http://localhost:3000
 AUTH0_ISSUER_BASE_URL=https://your-tenant.us.auth0.com
 AUTH0_DOMAIN=your-tenant.us.auth0.com
 AUTH0_CLIENT_ID=your_auth0_client_id
@@ -151,7 +151,7 @@ That's it — the frontend only needs Auth0 + the backend URL.
 | `AUTH0_CLIENT_ID` | Yes | Same Auth0 application |
 | `AUTH0_CLIENT_SECRET` | Yes | Same Auth0 application |
 | `AUTH0_AUDIENCE` | Yes | Same API identifier |
-| `AUTH0_BASE_URL` | Yes | Same frontend origin |
+| `APP_BASE_URL` | Yes | Same frontend origin |
 | `AUTH0_SECRET` | Frontend only | Session encryption, not needed in backend |
 | `AUTH0_ISSUER_BASE_URL` | Frontend only | Auth0 SDK needs `https://` prefix version |
 | `NEXT_PUBLIC_API_URL` | Frontend only | Points to the backend |
@@ -167,7 +167,7 @@ When deploying, update these values:
 | Variable | Local | Production |
 |----------|-------|-----------|
 | `AUTH0_SECRET` | Generated hex | **New** generated hex (different from local) |
-| `AUTH0_BASE_URL` | `http://localhost:3000` | `https://your-domain.com` |
+| `APP_BASE_URL` | `http://localhost:3000` | `https://your-domain.com` |
 | `AUTH0_ISSUER_BASE_URL` | `https://tenant.us.auth0.com` | Same (or production tenant) |
 | `NEXT_PUBLIC_API_URL` | `http://localhost:4000` | `https://api.your-domain.com` |
 
@@ -184,4 +184,4 @@ Remember to update **Allowed Callback URLs** and **Allowed Logout URLs** in Auth
 | API calls return 401 | Verify `AUTH0_AUDIENCE` matches the API Identifier in Auth0 |
 | `AUTH0_SECRET` error on start | Must be at least 32 characters. Regenerate with `openssl rand -hex 32` |
 | "NEXT_PUBLIC_API_URL is undefined" | Variables prefixed with `NEXT_PUBLIC_` require a server restart after changes |
-| CORS error on API calls | Ensure backend `FRONTEND_URL` matches `AUTH0_BASE_URL` exactly (no trailing slash) |
+| CORS error on API calls | Ensure backend `FRONTEND_URL` matches `APP_BASE_URL` exactly (no trailing slash) |
