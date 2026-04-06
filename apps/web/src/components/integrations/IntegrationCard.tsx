@@ -19,7 +19,7 @@ interface IntegrationCardProps {
  * and connect/disconnect actions. The OAuth flow goes through Auth0
  * Connected Accounts, not our backend — Token Vault stores the tokens.
  * Ref: 06-design-demo.md — Integrations Page Layout
- * Ref: 01-architecture.md — "Admin clicks Connect Slack → Auth0 Connected Accounts OAuth flow"
+ * Ref: 01-architecture.md — "Admin clicks Connect Slack → Auth0 Social Connections OAuth flow"
  */
 
 const providerConfig = {

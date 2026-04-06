@@ -47,8 +47,8 @@ export class TokenVaultService {
             'urn:auth0:params:oauth:token-type:access_token',
           requested_token_type:
             'urn:auth0:params:oauth:token-type:connection_access_token',
-          // WHY: 'connection' must match the Connected Account name configured
-          // in Auth0 Dashboard → AI Agents → Connected Accounts
+          // WHY: 'connection' must match the Social Connection name configured
+          // in Auth0 Dashboard → Authentication → Social
           connection: provider,
           subject: userId,
         }),

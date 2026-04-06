@@ -83,7 +83,7 @@ All responses from the Next.js frontend include:
 ## Token Vault Flow
 
 1. Admin logs in via Auth0 Universal Login
-2. Admin clicks "Connect Slack" → Auth0 Connected Accounts OAuth flow
+2. Admin clicks "Connect Slack" → Auth0 Social Connections OAuth flow
 3. Slack refresh token stored in Auth0 Token Vault (never touches our DB)
 4. Scan job runs → calls token exchange → gets fresh access token
 5. Scan calls Slack Admin API with that token

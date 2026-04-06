@@ -104,9 +104,12 @@ pnpm dev
 - If available in your tenant, keep CIBA enabled in the same Grant Types section
 
 ### 5. Set up Connected Accounts
-- **Slack:** AI Agents → Connected Accounts → Add Connection → Slack
+- **Slack:** Authentication → Social → Add Connection → Sign in with Slack
+  - Purpose: choose **Connected Accounts for Token Vault**.
+  - Do not choose **Authentication** unless you want Slack to be a login provider.
+  - Under **Applications using this connection**, enable **VaultGuard Web** only.
   - Scopes: `admin.users:read`, `admin.apps:read`, `users:read`, `users:read.email`, `team:read`, `channels:read`
-- **GitHub:** AI Agents → Connected Accounts → Add Connection → GitHub
+- **GitHub:** Authentication → Social → Add Connection → GitHub
   - Scopes: `read:org`, `read:user`, `repo`, `read:audit_log`, `admin:org`
 
 ### 6. Enable CIBA
@@ -155,13 +158,19 @@ exports.onExecutePostLogin = async (event, api) => {
 ## Slack App Setup
 
 1. Go to [api.slack.com/apps](https://api.slack.com/apps) → Create New App
-2. Add Bot Token Scopes (see Connected Accounts section above)
-3. Install to your test workspace
+2. Open the app → **Basic Information** → **App Credentials**.
+3. Copy the **Client ID** and **Client Secret** for the Auth0 social connection in Step 5.
+4. Open **OAuth & Permissions** and add **Bot Token Scopes** for the backend scanner.
+5. Install to your test workspace.
 
 ## GitHub OAuth App Setup
 
 1. GitHub → Settings → Developer Settings → OAuth Apps → New
-2. Callback URL: `https://YOUR_AUTH0_DOMAIN/login/callback`
+2. Copy the **Client ID** and **Client Secret** from that app into the Auth0 GitHub social connection.
+3. Homepage URL: `http://localhost:3000` while developing, or your deployed web app URL in production.
+4. Authorization callback URL: `https://vaultguard-ai-dev.us.auth0.com/login/callback`
+
+> If Auth0 shows an error about using Auth0's Developer Keys, this means the GitHub social connection is still using Auth0 defaults. Replace them with your own GitHub OAuth app credentials.
 
 ## Available Scripts
 

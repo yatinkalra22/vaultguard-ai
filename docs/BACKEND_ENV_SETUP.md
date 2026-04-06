@@ -116,6 +116,7 @@ AUTH0_CLIENT_SECRET=your_client_secret_here
 Token Vault stores Slack/GitHub OAuth tokens securely in Auth0's infrastructure.
 
 > In this tenant, Token Vault is enabled from the web application settings, not from the AI Agents landing page.
+> Social Connections for Slack/GitHub are under **Authentication** → **Social** in the Auth0 dashboard, not under **AI Agents**.
 
 ### 3a. Enable Token Vault
 
@@ -127,9 +128,13 @@ Token Vault stores Slack/GitHub OAuth tokens securely in Auth0's infrastructure.
 
 ### 3b. Add Slack Connected Account
 
-1. Left sidebar → **AI Agents** → **Connected Accounts**
-2. Click **Add Connection**
-3. Select **Slack**
+1. Left sidebar → **Authentication** → **Social**
+2. Select or click **Add Connection**
+3. Choose **Sign in with Slack**
+  - Do not use the deprecated **Slack OAuth 2.0** connection if **Sign in with Slack** is available.
+  - Purpose: choose **Connected Accounts for Token Vault**.
+  - Do not choose **Authentication** unless you want Slack to be a login provider.
+  - Under **Applications using this connection**, enable **VaultGuard Web** only.
 4. Add these scopes:
    - `admin.users:read`
    - `admin.apps:read`
@@ -139,13 +144,15 @@ Token Vault stores Slack/GitHub OAuth tokens securely in Auth0's infrastructure.
    - `channels:read`
 5. Save
 
-> **Where to create Slack app credentials:** https://api.slack.com/apps → Create New App → From Scratch. Copy the Client ID and Client Secret into the Connected Account config in Auth0.
+> **Where to get Slack app credentials:** https://api.slack.com/apps → Create New App → From Scratch → **Basic Information** → **App Credentials**. Copy the Client ID and Client Secret into the Connected Account config in Auth0.
+> If you land on Slack's token page, that is the wrong screen for Auth0. Use **OAuth & Permissions** only for bot token scopes.
 
 ### 3c. Add GitHub Connected Account
 
-1. Still in **Connected Accounts** → **Add Connection**
-2. Select **GitHub**
-3. Add these scopes:
+1. Still in **Authentication** → **Social**
+2. Select or click **Add Connection**
+3. Choose **GitHub**
+4. Add these scopes:
    - `read:org`
    - `read:user`
    - `repo`
@@ -154,6 +161,8 @@ Token Vault stores Slack/GitHub OAuth tokens securely in Auth0's infrastructure.
 4. Save
 
 > **Where to create GitHub OAuth app credentials:** https://github.com/settings/developers → OAuth Apps → New OAuth App. Set the callback URL to `https://YOUR_AUTH0_DOMAIN/login/callback`. Copy Client ID and Client Secret into the Connected Account config in Auth0.
+> Use `http://localhost:3000` as the GitHub app homepage URL during local development.
+> For this tenant, the GitHub OAuth app authorization callback URL is `https://vaultguard-ai-dev.us.auth0.com/login/callback`.
 
 No extra env vars needed — Token Vault uses the same `AUTH0_CLIENT_ID` and `AUTH0_CLIENT_SECRET` from Step 2.
 

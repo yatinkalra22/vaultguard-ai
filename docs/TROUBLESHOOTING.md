@@ -78,6 +78,14 @@ Checks:
 - If Token Vault is missing from AI Agents, check the web application: Applications → VaultGuard Web → Advanced Settings → Grant Types.
 - If it still is not visible, the tenant may not have Token Vault / Connected Accounts enabled yet.
 
+### Symptom: GitHub connection error about Auth0 Developer Keys
+
+Checks:
+
+- Open the GitHub social connection in Auth0 and confirm **Client ID** and **Client Secret** are populated.
+- Do not leave them blank. Blank fields use Auth0's developer keys, which cannot be used for Connected Accounts with Token Vault.
+- Make sure those values come from your own GitHub OAuth App in GitHub Developer Settings → OAuth Apps.
+
 ### Symptom: scans run but no findings
 
 Checks:
