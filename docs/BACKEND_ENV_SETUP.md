@@ -80,7 +80,7 @@ You need **one Auth0 tenant** that provides 4 values for the backend.
 
 Still on the Settings page, scroll down and configure:
 
-- **Allowed Callback URLs:** `http://localhost:3000/api/auth/callback`
+- **Allowed Callback URLs:** `http://localhost:3000/auth/callback`
 - **Allowed Logout URLs:** `http://localhost:3000`
 - **Allowed Web Origins:** `http://localhost:3000`
 - Click **Save Changes**

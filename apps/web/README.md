@@ -23,7 +23,7 @@ Copy root env template values into:
 Required keys:
 
 - AUTH0_SECRET
-- AUTH0_BASE_URL
+- APP_BASE_URL
 - AUTH0_ISSUER_BASE_URL
 - AUTH0_CLIENT_ID
 - AUTH0_CLIENT_SECRET
@@ -32,7 +32,7 @@ Required keys:
 
 ## Security Checklist
 
-- `AUTH0_BASE_URL` must match the deployed web origin (no localhost in shared envs).
+- `APP_BASE_URL` must match the deployed web origin (no localhost in shared envs).
 - API now rejects unauthenticated telemetry, so web telemetry is routed via `/api/proxy/telemetry`.
 - Keep `ALLOW_INSECURE_DEV_AUTH` disabled outside local development.
 - Keep `ENABLE_DEMO_ENDPOINTS` disabled outside explicit demo environments.
@@ -48,4 +48,4 @@ Required keys:
 ## Notes
 
 - API requests are proxied through /api/proxy/* so access tokens stay server-side.
-- Auth is handled by @auth0/nextjs-auth0 middleware and route handlers.
+- Auth is handled by @auth0/nextjs-auth0 v4 via proxy.ts (Next.js 16 pattern).

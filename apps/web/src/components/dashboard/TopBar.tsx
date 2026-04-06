@@ -27,7 +27,7 @@ export function TopBar({ userName, userEmail }: TopBarProps) {
           </p>
         </div>
         <a
-          href="/api/auth/logout"
+          href="/auth/logout"
           title="Sign out"
           className="inline-flex items-center justify-center h-9 w-9 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
         >

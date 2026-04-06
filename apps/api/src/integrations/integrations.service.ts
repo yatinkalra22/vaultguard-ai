@@ -75,7 +75,8 @@ export class IntegrationsService {
     const params = new URLSearchParams({
       response_type: 'code',
       client_id: clientId,
-      redirect_uri: `${baseUrl}/api/auth/callback`,
+      // WHY: SDK v4 handles callbacks at /auth/callback (not /api/auth/callback).
+      redirect_uri: `${baseUrl}/auth/callback`,
       scope: 'openid profile email offline_access',
       audience,
       connection: provider,

@@ -27,9 +27,9 @@ pnpm dev
 
 Checks:
 
-- `AUTH0_BASE_URL` matches active web origin.
+- `APP_BASE_URL` (frontend) / `AUTH0_BASE_URL` (backend) matches active web origin.
 - `AUTH0_ISSUER_BASE_URL` points to your Auth0 tenant domain.
-- Auth0 app callback URL includes `/api/auth/callback` for your environment.
+- Auth0 app callback URL includes `/auth/callback` for your environment.
 
 ### Symptom: API returns 401 for authenticated user
 

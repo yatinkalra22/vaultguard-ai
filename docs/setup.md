@@ -88,7 +88,7 @@ pnpm dev
 ### 2. Create a Regular Web Application
 - Applications → Create Application → Regular Web Application
 - Name: `VaultGuard Web`
-- Callback URLs: `http://localhost:3000/api/auth/callback`
+- Callback URLs: `http://localhost:3000/auth/callback`
 - Logout URLs: `http://localhost:3000`
 - Save: **Domain**, **Client ID**, **Client Secret**
 
