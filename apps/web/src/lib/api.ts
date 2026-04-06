@@ -16,6 +16,7 @@ function normalizePath(path: string): string {
 export const ERROR_CODES = {
   UNAUTHORIZED: "unauthorized",
   FORBIDDEN: "forbidden",
+  NO_ORGANIZATION: "no_organization",
   VALIDATION_FAILED: "validation_failed",
   NOT_FOUND: "not_found",
   RATE_LIMITED: "rate_limited",
@@ -30,6 +31,10 @@ export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];
 const ERROR_CODE_MESSAGES: Record<ErrorCode, string> = {
   [ERROR_CODES.UNAUTHORIZED]: "Your session has expired. Please sign in again.",
   [ERROR_CODES.FORBIDDEN]: "You don't have permission to perform this action.",
+  // WHY: Separate code from generic 403 — "no permission" is confusing when
+  // the real issue is that the Auth0 org claim is missing from the JWT.
+  [ERROR_CODES.NO_ORGANIZATION]:
+    "Your account is not linked to an organization. Ensure your Auth0 organization is configured.",
   [ERROR_CODES.VALIDATION_FAILED]: "Please check your input and try again.",
   [ERROR_CODES.NOT_FOUND]: "The requested resource could not be found.",
   [ERROR_CODES.RATE_LIMITED]: "Too many requests. Please wait a moment and try again.",
@@ -285,8 +290,11 @@ export function showErrorToast(error: unknown, action?: string) {
     // WHY: A 401 means the session token is expired or invalid. Showing a toast
     // and leaving the user on a broken page is poor UX — redirect straight to
     // login so they can re-authenticate without any extra clicks.
+    // Pass returnTo so the user lands back on the page they were on, not the
+    // dashboard root.
     if (error.status === 401) {
-      window.location.href = "/auth/login";
+      const returnTo = encodeURIComponent(window.location.pathname);
+      window.location.href = `/auth/login?returnTo=${returnTo}`;
       return;
     }
 

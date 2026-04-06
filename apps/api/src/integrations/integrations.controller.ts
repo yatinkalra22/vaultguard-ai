@@ -36,12 +36,16 @@ export class IntegrationsController {
       // Returning { error } gives HTTP 200 — the frontend destructures `url`,
       // gets undefined, and navigates to the literal string "undefined".
       // WHY ForbiddenException (403) not UnauthorizedException (401):
-      // The user IS authenticated — their JWT is valid. They just don't have an
-      // org claim yet (Auth0 org not configured). 401 would trigger the
-      // global auto-logout redirect in showErrorToast, which is wrong here.
-      throw new ForbiddenException(
-        'No organization associated with this account. Ensure your Auth0 organization is configured.',
-      );
+      // The user IS authenticated — JWT is valid. They just don't have an org
+      // claim yet. 401 would trigger the global auto-logout redirect, which
+      // is wrong for an account configuration issue.
+      // WHY code:'no_organization': generic 403 maps to "You don't have
+      // permission" in the frontend, which is confusing. The custom code maps
+      // to a message that actually tells the user what's wrong.
+      throw new ForbiddenException({
+        code: 'no_organization',
+        message: 'No organization associated with this account. Ensure your Auth0 organization is configured.',
+      });
     }
 
     if (provider !== 'slack' && provider !== 'github') {
@@ -58,9 +62,10 @@ export class IntegrationsController {
   ) {
     const orgId = req.user.orgId;
     if (!orgId) {
-      throw new ForbiddenException(
-        'No organization associated with this account.',
-      );
+      throw new ForbiddenException({
+        code: 'no_organization',
+        message: 'No organization associated with this account.',
+      });
     }
 
     return this.integrations.disconnectIntegration(orgId, id);
