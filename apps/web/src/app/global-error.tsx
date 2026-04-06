@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 // WHY: Global error boundary. Catches unhandled errors in the root layout.
 // Must be a Client Component and must render its own <html>/<body> tags
 // because it replaces the root layout when triggered.
@@ -38,12 +40,12 @@ export default function GlobalError({
               >
                 Try Again
               </button>
-              <a
+              <Link
                 href="/"
                 className="rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-accent"
               >
                 Back to Dashboard
-              </a>
+              </Link>
             </div>
           </div>
         </div>
