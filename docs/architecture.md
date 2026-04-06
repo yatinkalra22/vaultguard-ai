@@ -32,7 +32,7 @@ Terminology used in this document:
 │                                                                     │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐              │
 │  │  AuthModule  │  │  ScanModule  │  │   AIModule   │              │
-│  │  (Auth0 JWT) │  │  (Scheduler) │  │  (Claude)    │              │
+│  │  (Auth0 JWT) │  │  (Scheduler) │  │(Gemini/Claude)│             │
 │  └──────────────┘  └──────────────┘  └──────────────┘              │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐              │
 │  │ SlackModule  │  │ GitHubModule │  │ AlertsModule │              │

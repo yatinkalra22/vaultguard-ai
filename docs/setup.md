@@ -21,7 +21,8 @@ These guides walk you through every dashboard, every click, and every value to c
 - Git
 - Auth0 account (free tier: [auth0.com](https://auth0.com))
 - Supabase account (free tier: [supabase.com](https://supabase.com))
-- Anthropic API key ([console.anthropic.com](https://console.anthropic.com))
+- Gemini API key ([aistudio.google.com/apikey](https://aistudio.google.com/apikey)) — primary AI provider
+- Anthropic API key ([console.anthropic.com](https://console.anthropic.com)) — fallback AI provider (optional if you have Gemini)
 - Slack workspace with admin rights (for testing)
 - GitHub account with org admin rights (for testing)
 

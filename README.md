@@ -27,7 +27,7 @@ Connect → Scan → Analyze → CIBA Approve → Execute → Audit
 
 1. **Connect** — Admin connects Slack + GitHub via Auth0 Connected Accounts
 2. **Scan** — AI agent fetches workspace data using Token Vault (credentials never stored locally)
-3. **Analyze** — Claude Sonnet calculates a 0-100 risk score and generates per-finding recommendations in plain English
+3. **Analyze** — AI engine (Gemini 3.1 Pro primary, Claude Sonnet fallback) calculates a 0-100 risk score and generates per-finding recommendations in plain English
 4. **Remediate** — Admin clicks "Remediate" → step-up MFA verification → CIBA sends approval email → admin approves → action executes
 5. **Audit** — Every action logged: who requested, who approved, what was done, when
 
@@ -37,7 +37,7 @@ Connect → Scan → Analyze → CIBA Approve → Execute → Audit
 |-------|-----------|
 | Frontend | Next.js 16 App Router, Tailwind CSS v4, shadcn/ui, Recharts |
 | Backend | NestJS, TypeScript |
-| AI | Claude Sonnet (Anthropic) |
+| AI | Gemini 3.1 Pro Preview (primary) + Claude Sonnet (fallback) |
 | Auth | Auth0 (Token Vault, CIBA, FGA, Universal Login) |
 | Database | Supabase (PostgreSQL) |
 | Monorepo | Turborepo, pnpm workspaces |
@@ -48,7 +48,7 @@ Connect → Scan → Analyze → CIBA Approve → Execute → Audit
 - **Slack scanning** — Stale admins, deactivated users with admin flags, shadow apps with broad OAuth scopes
 - **GitHub scanning** — Outside collaborators, org-wide app installations, inactive org owners
 - **AI risk scoring** — 0-100 score with weighted severity calculation
-- **Plain English recommendations** — Claude Sonnet generates specific, actionable advice per finding
+- **Plain English recommendations** — AI generates specific, actionable advice per finding (Gemini 3.1 primary, Claude fallback)
 - **Step-up authentication** — MFA required before any remediation (prevents session hijacking)
 - **CIBA remediation** — One-click remediate → email approval → auto-execute
 - **Safe remediation scope** — Only supported auto-remediation actions execute; unsupported actions fail closed
@@ -114,7 +114,7 @@ vaultguard-ai/
 │           ├── auth/       # JWT validation, FGA guard
 │           ├── slack/      # Token Vault + Slack API
 │           ├── github/     # Token Vault + GitHub API
-│           ├── ai/         # Claude Sonnet analysis
+│           ├── ai/         # Gemini 3.1 + Claude Sonnet analysis
 │           ├── scanning/   # Orchestrator + scheduler
 │           ├── remediation/# CIBA service + execution
 │           ├── dashboard/  # Summary API + SSE
@@ -138,8 +138,7 @@ vaultguard-ai/
 │   ├── deployment.md             # Deployment and operations guide
 │   ├── architecture.md           # System architecture and data flow
 │   ├── ARCHITECTURE_STANDARDS.md # Engineering standards
-│   ├── SECURITY_AUDIT.md         # Security hardening record
-│   ├── PLAN.md                   # Historical implementation plan
+│   ├── MARKET_RESEARCH.md        # Market context and research
 │   ├── blog-post.md              # Hackathon blog post draft
 │   └── adr/                      # Architecture decision records
 ├── apps/web/.env.example   # Frontend env template
@@ -167,13 +166,13 @@ vaultguard-ai/
 
 - [Deployment Guide](docs/deployment.md) — preflight checks, rollout order, rollback, and verification
 - [Operations Runbook](docs/OPERATIONS_RUNBOOK.md) — release triage and incident response baseline
-- [Security Audit](docs/SECURITY_AUDIT.md) — security hardening record and remediation history
+
 
 ### Governance and History
 
 - [ADR Guidelines](docs/adr/README.md) — architecture decision process
 - [ADR Template](docs/adr/0000-template.md) — starting point for new ADRs
-- [Implementation Plan (Historical)](docs/PLAN.md) — historical implementation record
+
 - [Blog Post Draft](docs/blog-post.md) — hackathon narrative draft
 
 ### Where Do I...?
@@ -190,7 +189,7 @@ vaultguard-ai/
 | Prepare and execute deployments | [docs/deployment.md](docs/deployment.md) |
 | Handle release incidents and rollback | [docs/OPERATIONS_RUNBOOK.md](docs/OPERATIONS_RUNBOOK.md) |
 | Propose a non-trivial architecture change | [docs/adr/README.md](docs/adr/README.md) |
-| Review historical implementation context | [docs/PLAN.md](docs/PLAN.md) |
+| Review market and competitive context | [docs/MARKET_RESEARCH.md](docs/MARKET_RESEARCH.md) |
 
 ## Security Architecture
 

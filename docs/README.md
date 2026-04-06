@@ -27,8 +27,7 @@ This index is the source of truth for project documentation.
 
 | Document | Purpose | Audience |
 |---|---|---|
-| [SECURITY_AUDIT.md](./SECURITY_AUDIT.md) | Security findings and hardening changelog | Engineering and security reviewers |
-| [PLAN.md](./PLAN.md) | Historical implementation phases and milestones | Engineering context/history |
+| [MARKET_RESEARCH.md](./MARKET_RESEARCH.md) | Market context and competitive landscape | Reference only |
 | [blog-post.md](./blog-post.md) | Hackathon blog draft | Marketing/submission use |
 
 ## Documentation quality checklist

@@ -53,7 +53,8 @@ The lists below are the production minimum subset. Canonical variable definition
 - `FRONTEND_URL` (exact web origin for CORS)
 - `SUPABASE_URL`
 - `SUPABASE_SERVICE_ROLE_KEY`
-- `ANTHROPIC_API_KEY`
+- `GEMINI_API_KEY` (primary AI — set this unless using Anthropic only)
+- `ANTHROPIC_API_KEY` (fallback AI — at least one of these two must be set)
 - `FGA_STORE_ID`
 - `FGA_CLIENT_ID`
 - `FGA_CLIENT_SECRET`

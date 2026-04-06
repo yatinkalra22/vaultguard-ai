@@ -35,7 +35,8 @@ Step-by-step setup guides: [FRONTEND_ENV_SETUP.md](./FRONTEND_ENV_SETUP.md) | [B
 | `FGA_CLIENT_SECRET` | Yes (for FGA) | OpenFGA API client secret. |
 | `SUPABASE_URL` | Yes | Supabase project URL. |
 | `SUPABASE_SERVICE_ROLE_KEY` | Yes | Supabase backend admin key from Settings → API Keys (legacy `service_role` or a new secret key). Bypasses RLS — never expose in frontend. |
-| `ANTHROPIC_API_KEY` | Yes | Anthropic API key for Claude AI risk analysis. |
+| `GEMINI_API_KEY` | Yes (if no Anthropic) | Google AI Studio key for Gemini 3.1 Pro — the primary AI provider. Get it at aistudio.google.com/apikey |
+| `ANTHROPIC_API_KEY` | Yes (if no Gemini) | Anthropic key for Claude Sonnet — secondary fallback. At least one AI key must be set. |
 | `FRONTEND_URL` | Yes | Exact allowed CORS origin. Must match frontend URL (no trailing slash). |
 | `AUTH0_BASE_URL` | Yes | Web base URL for auth redirect/callback flows. |
 | `DEFAULT_GITHUB_ORG` | Optional | Fallback GitHub org for scheduled/manual scans. |

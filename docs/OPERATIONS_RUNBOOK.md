@@ -78,4 +78,4 @@ Trigger rollback when one or more are true:
 - Setup: `docs/setup.md`
 - Deployment: `docs/deployment.md`
 - Troubleshooting: `docs/TROUBLESHOOTING.md`
-- Security hardening record: `docs/SECURITY_AUDIT.md`
+- Architecture standards: `docs/ARCHITECTURE_STANDARDS.md`

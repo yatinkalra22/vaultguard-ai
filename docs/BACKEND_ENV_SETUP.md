@@ -21,7 +21,8 @@ Step-by-step guide to get every key/value for the backend. Follow in order — s
 | `FGA_CLIENT_SECRET` | Auth0 FGA Dashboard → Settings |
 | `SUPABASE_URL` | Supabase Dashboard → Settings → Data API (Project URL) |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase Dashboard → Settings → API Keys (Legacy `service_role` or a new Secret key) |
-| `ANTHROPIC_API_KEY` | Anthropic Console → API Keys |
+| `GEMINI_API_KEY` | Google AI Studio → API Keys (primary AI provider) |
+| `ANTHROPIC_API_KEY` | Anthropic Console → API Keys (fallback AI provider) |
 | `FRONTEND_URL` | Set manually (`http://localhost:3000`) |
 | `AUTH0_BASE_URL` | Set manually (`http://localhost:3000`) |
 | `DEFAULT_GITHUB_ORG` | Your GitHub org name (optional) |
@@ -311,16 +312,36 @@ SUPABASE_SERVICE_ROLE_KEY=your_service_role_or_secret_key
 
 ---
 
-## Step 8: Anthropic (Claude AI)
+## Step 8: AI Providers (Gemini + Anthropic)
 
-### 8a. Get an API Key
+VaultGuard uses Gemini 3.1 Pro as the primary AI provider and Claude Sonnet as fallback. You need at least one key set. If both are set, Gemini runs first and Claude only kicks in if Gemini fails.
+
+### 8a. Get a Gemini API Key (Primary - Recommended)
+
+1. Go to **https://aistudio.google.com/apikey** (sign in with a Google account)
+2. Click **Create API Key**
+3. Select or create a Google Cloud project
+4. **Copy the key immediately**
+
+**Copy this value:**
+
+| Value on Screen | Env Variable | Example |
+|----------------|-------------|---------|
+| **API Key** | `GEMINI_API_KEY` | `AIzaSy...` |
+
+> **Pricing:** Gemini has a free tier (generous rate limits). Paid tier is very affordable per token.
+> **Model used:** `gemini-3.1-pro-preview`
+
+```env
+GEMINI_API_KEY=AIzaSy-your-key-here
+```
+
+### 8b. Get an Anthropic API Key (Fallback - Optional)
 
 1. Go to **https://console.anthropic.com** (sign up if needed)
-2. Left sidebar → **API Keys**
-3. Click **Create Key**
-4. Name: `vaultguard-ai`
-5. Click **Create Key**
-6. **Copy the key immediately** — it won't be shown again
+2. Left sidebar → **API Keys** → **Create Key**
+3. Name: `vaultguard-ai`
+4. **Copy the key immediately** — it won't be shown again
 
 **Copy this value:**
 
@@ -328,8 +349,8 @@ SUPABASE_SERVICE_ROLE_KEY=your_service_role_or_secret_key
 |----------------|-------------|---------|
 | **API Key** | `ANTHROPIC_API_KEY` | `sk-ant-api03-...` |
 
-> **Pricing:** Claude Sonnet 4.5 costs ~$3/1M input tokens, $15/1M output tokens. A single scan analysis costs fractions of a cent.
-> **Free credits:** New accounts typically get $5 in free credits.
+> The service starts fine with only `GEMINI_API_KEY` set. Set both if you want automatic failover.
+> **Free credits:** New Anthropic accounts typically get $5 in free credits.
 
 ```env
 ANTHROPIC_API_KEY=sk-ant-api03-your-key-here
@@ -371,7 +392,9 @@ FGA_CLIENT_SECRET=your_fga_client_secret
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_or_secret_key
 
-# ── Anthropic (Claude AI) ──
+# ── AI Providers (set at least one) ──
+# Gemini is primary. Anthropic is fallback. Both optional but one is required for AI analysis.
+GEMINI_API_KEY=AIzaSy-your-key-here
 ANTHROPIC_API_KEY=sk-ant-api03-your-key-here
 
 # ── URLs ──
@@ -391,7 +414,8 @@ DEFAULT_GITHUB_ORG=your-github-org
 | **Auth0** | https://manage.auth0.com/dashboard | Domain, Client ID, Client Secret, Token Vault, CIBA, MFA |
 | **Auth0 FGA** | https://dashboard.fga.dev | FGA Store ID, FGA Client ID, FGA Client Secret |
 | **Supabase** | https://supabase.com/dashboard | Project URL, Service Role Key, SQL Editor |
-| **Anthropic** | https://console.anthropic.com | API Key |
+| **Google AI Studio** | https://aistudio.google.com/apikey | Gemini API Key (primary) |
+| **Anthropic** | https://console.anthropic.com | Anthropic API Key (fallback) |
 | **Slack Apps** | https://api.slack.com/apps | Slack app credentials (for Auth0 Connected Accounts) |
 | **GitHub OAuth** | https://github.com/settings/developers | GitHub OAuth app (for Auth0 Connected Accounts) |
 
@@ -405,5 +429,6 @@ DEFAULT_GITHUB_ORG=your-github-org
 | CIBA grant type error | Ensure CIBA grant type is enabled in App → Advanced Settings → Grant Types |
 | FGA permission denied | Check FGA credentials are from the same store. Re-run `setup-fga-model.sh` |
 | Supabase connection refused | Check `SUPABASE_URL` has `https://` prefix. Verify project is not paused. |
-| Anthropic 401 error | API key may have expired or been revoked. Generate a new one. |
+| Gemini 401/403 error | API key may be invalid or project billing not enabled. Check https://aistudio.google.com/apikey |
+| Anthropic 401 error | API key may have expired or been revoked. Generate a new one at console.anthropic.com |
 | CORS errors | `FRONTEND_URL` must exactly match the origin (no trailing slash) |
